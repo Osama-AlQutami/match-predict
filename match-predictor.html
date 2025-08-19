@@ -113,10 +113,69 @@
 
   // مسابقات افتراضية (تقدر تغير من الواجهة):
   // PL=Premier League, BL1=Bundesliga, PD=La Liga, SA=Serie A, FL1=Ligue 1
-  const DEFAULT_COMP_IDS = "PL,PD,SA,BL1,FL1";
+  const DEFAULT_COMP_IDS = "PL"; // ابدأ بـ PL فقط للتجربة ثم أضف باقي الأكواد
 
   /**** ======== Supabase init ======== ****/
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // Debug helper: يعرض سبب الخطأ أعلى الصفحة بدون ما يوقف الموقع
+  function showErr(ctx, err){
+    const msg = (err && (err.message || err.error || err.statusText)) || String(err);
+    console.error('[ERR]', ctx, err);
+    let box = document.getElementById('debugErr');
+    if(!box){
+      box = document.createElement('div');
+      box.id='debugErr'; box.style.margin='10px 0';
+      box.style.padding='10px'; box.style.border='1px dashed #374151';
+      box.style.background='#111827'; box.style.borderRadius='10px';
+      box.style.color='#e5e7eb'; box.className='small';
+      document.querySelector('.container').prepend(box);
+    }
+    box.innerHTML = `<strong>خطأ:</strong> ${ctx} — ${msg}`;
+  }
+
+  /** جداول مطلوبة في Supabase (SQL):
+  -- profiles
+  create table if not exists profiles (
+    id uuid primary key references auth.users(id) on delete cascade,
+    username text unique,
+    created_at timestamp default now()
+  );
+  alter table profiles enable row level security;
+  create policy "public read profiles" on profiles for select using (true);
+  create policy "user can insert self" on profiles for insert with check (auth.uid() = id);
+
+  -- predictions
+  create table if not exists predictions (
+    id bigserial primary key,
+    user_id uuid references auth.users(id) on delete cascade,
+    match_id text not null,
+    home_goals int not null,
+    away_goals int not null,
+    kickoff timestamptz not null,
+    comp_id text,
+    team_home text,
+    team_away text,
+    created_at timestamptz default now(),
+    unique(user_id, match_id)
+  );
+  alter table predictions enable row level security;
+  create policy "owner rw" on predictions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  create policy "leaderboard can read" on predictions for select using (true);
+
+  -- scores (cache نقاط نهائية لكل مباراة)
+  create table if not exists results (
+    match_id text primary key,
+    home_goals int,
+    away_goals int,
+    status text,
+    updated_at timestamptz default now()
+  );
+  alter table results enable row level security;
+  create policy "public read results" on results for select using (true);
+  create policy "service can write" on results for insert with check (true);
+  create policy "service can update" on results for update using (true) with check (true);
+  */
 
   /**** ======== Helpers ======== ****/
   const $ = (sel)=>document.querySelector(sel);
@@ -202,15 +261,20 @@
   async function fetchCompMatches(comp){
     const token = getToken();
     const headers = token? { 'X-Auth-Token': token } : {};
-    // Upcoming in next 7 days
     const now = new Date();
     const from = now.toISOString().slice(0,10);
     const to = new Date(now.getTime()+7*864e5).toISOString().slice(0,10);
     const url = `${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
-    const res = await fetch(url, {headers});
-    if(!res.ok) throw new Error('API error '+res.status);
-    const json = await res.json();
-    return json.matches || [];
+    try{
+      const res = await fetch(url, {headers});
+      if(!res.ok){
+        let apiMsg = `API ${res.status}`;
+        try{ const j = await res.json(); if(j && (j.message||j.error)){ apiMsg += ` — ${j.message||j.error}`; } }catch(_){ /* ignore */ }
+        throw new Error(apiMsg + ` (المسابقة: ${comp})`);
+      }
+      const json = await res.json();
+      return json.matches || [];
+    }catch(e){ showErr('fetchCompMatches', e); return []; }
   }
 
   async function loadMatches(){
@@ -220,25 +284,24 @@
     $('#teamIds').value = scope.teams.join(',');
     $('#footballToken').value = getToken();
     try{
-      let all = [];
+      let all = []; let hadError = false;
       for(const c of scope.comps){
         const part = await fetchCompMatches(c);
-        all = all.concat(part);
+        if(!Array.isArray(part)) hadError = true;
+        all = all.concat(part||[]);
       }
-      // filter by teams if provided
       if(scope.teams.length){
         all = all.filter(m=> scope.teams.includes(String(m.homeTeam.id)) || scope.teams.includes(String(m.awayTeam.id)) );
       }
-      // upcoming only
       all = all.filter(m=> ['TIMED','SCHEDULED'].includes(m.status));
-      if(!all.length){ noMatchesEl.classList.remove('hidden'); return; }
+      if(!all.length){
+        noMatchesEl.classList.remove('hidden');
+        noMatchesEl.textContent = hadError ? 'تعذر جلب بعض البيانات — تأكد من التوكن وجرّب دوري واحد فقط (PL) أولًا.' : 'لا يوجد مباريات ضمن النطاق الحالي.';
+        return;
+      }
       all.sort((a,b)=> new Date(a.utcDate)-new Date(b.utcDate));
       all.forEach(renderMatchCard);
-    }catch(e){
-      console.error(e);
-      noMatchesEl.classList.remove('hidden');
-      noMatchesEl.textContent = 'تعذر جلب البيانات. تأكد من التوكن أو المعرّفات.';
-    }
+    }catch(e){ showErr('loadMatches', e); noMatchesEl.classList.remove('hidden'); noMatchesEl.textContent = 'تعذر جلب البيانات.'; }
   }
 
   function renderMatchCard(m){
