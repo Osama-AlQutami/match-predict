@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تعيين كلمة سر جديدة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body{margin:0;background:#0f172a;color:#e5e7eb;font-family:"Tajawal",system-ui,Arial}
+    .wrap{max-width:520px;margin:40px auto;padding:20px;background:#111827;border:1px solid #1f2937;border-radius:14px}
+    input{width:100%;background:#0b1220;color:#e5e7eb;border:1px solid #1f2937;border-radius:10px;padding:12px;margin:6px 0}
+    button{background:#22d3ee;border:none;color:#0b1220;font-weight:700;border-radius:10px;padding:12px 14px;cursor:pointer;width:100%}
+    .muted{color:#94a3b8}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>تعيين كلمة سر جديدة</h2>
+    <p class="muted">هذه الصفحة تعمل فقط عند فتحها من رابط الإيميل.</p>
+    <input id="pass1" type="password" placeholder="كلمة السر الجديدة" />
+    <input id="pass2" type="password" placeholder="تأكيد كلمة السر" />
+    <button id="save">حفظ</button>
+    <p id="msg" class="muted" style="margin-top:10px"></p>
+    <p style="margin-top:16px"><a href="./" style="color:#22d3ee">العودة للموقع</a></p>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+  const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieG9mdXV3YWJ3cXVydmJnZmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MTUxNzQsImV4cCI6MjA3MTE5MTE3NH0.a45JBtzQI8so9z3lZ__aypUIafmhxeUOCkmBmbtQOHg";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  const msg = (t)=> document.getElementById('msg').textContent = t;
+
+  // لو رجعت tokens في الـ hash من الإيميل نسجّل الجلسة
+  (async function ensureSessionFromHash(){
+    const h = new URLSearchParams(location.hash.slice(1));
+    const access_token  = h.get('access_token');
+    const refresh_token = h.get('refresh_token');
+    if (access_token && refresh_token) {
+      await supabase.auth.setSession({ access_token, refresh_token });
+    } else {
+      await supabase.auth.getSession();
+    }
+  })();
+
+  document.getElementById('save').addEventListener('click', async ()=>{
+    const p1 = document.getElementById('pass1').value;
+    const p2 = document.getElementById('pass2').value;
+    if(!p1 || p1.length < 6) return msg('كلمة السر لازم تكون 6 أحرف على الأقل');
+    if(p1 !== p2) return msg('الكلمتان غير متطابقتين');
+    const { error } = await supabase.auth.updateUser({ password: p1 });
+    if (error) return msg('خطأ: ' + error.message);
+    msg('تم تغيير كلمة السر بنجاح 🎉');
+  });
+  </script>
+</body>
+</html>
