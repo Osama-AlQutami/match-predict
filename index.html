@@ -151,6 +151,7 @@
 
   // وقت بأرقام إنجليزية
   const fmtTime = (iso)=> new Date(iso).toLocaleString('en-GB', { hour12:false });
+  const crest = (id)=> `https://crests.football-data.org/${id}.svg`;
 
   function lockReason(kickoffISO){
     const k = new Date(kickoffISO).getTime();
@@ -158,7 +159,6 @@
     if(diffMin <= 10) return `مغلق (باقي ${Math.max(0, Math.floor(diffMin))} دقيقة)`;
     return null;
   }
-  function crest(id){ return `https://crests.football-data.org/${id}.svg`; }
 
   function pointsFor(pred, result){
     if(!result || result.status !== 'FINISHED') return 0;
@@ -172,7 +172,7 @@
 
   let USER=null;                       // user object
   const userPreds = new Map();         // match_id -> prediction
-  const matchesMap = new Map();        // match_id -> match (لأسماء الفرق والوقت)
+  const matchesMap = new Map();        // match_id -> match
 
   async function refreshUser(){
     const { data: { user } } = await supabase.auth.getUser();
@@ -207,7 +207,7 @@
     return (json.matches || []).filter(m => ['TIMED','SCHEDULED'].includes(m.status));
   }
 
-  // جلب مباريات لفترة معيّنة (لاستخدام التاريخ الأسبوعي)
+  // جلب مباريات لفترة معيّنة (للاسبوعي)
   async function fetchMatchesRange(fromISO, toISO){
     let all = [];
     for(const c of FIXED_COMP_CODES){
@@ -229,7 +229,7 @@
     const mid = String(m.id);
     const saved = userPreds.get(mid);
 
-    matchesMap.set(mid, m); // مهم لأسماء الفرق عند الحفظ/السِجل
+    matchesMap.set(mid, m);
 
     card.innerHTML = `
       <div class="row" style="justify-content:space-between">
@@ -252,7 +252,6 @@
     $('#matches').appendChild(card);
 
     if(saved){
-      // امنع التعديل بعد الحفظ
       card.querySelector(`#h_${mid}`).value = saved.home_goals;
       card.querySelector(`#a_${mid}`).value = saved.away_goals;
       card.querySelector(`#h_${mid}`).disabled = true;
@@ -312,28 +311,52 @@
     });
   }
 
+  // ====== LEADERBOARD (يعرض الجميع حتى لو 0 نقطة) ======
   async function renderLeaderboard(){
-    const {data: preds} = await supabase.from('predictions').select('*');
-    const {data: res}   = await supabase.from('results').select('*');
-    const map = new Map((res||[]).map(r=>[r.match_id, r]));
+    const [profsRes, predsRes, resRes] = await Promise.all([
+      supabase.from('profiles').select('id,username'),
+      supabase.from('predictions').select('*'),
+      supabase.from('results').select('*')
+    ]);
+
+    const profs   = profsRes.data || [];
+    const preds   = predsRes.data || [];
+    const results = resRes.data   || [];
+
+    // خريطة النتائج الفعلية
+    const rmap = new Map(results.map(r => [String(r.match_id), r]));
+
+    // حساب النقاط من التوقعات
     const totals = new Map();
-    for(const p of (preds||[])){
-      const r = map.get(p.match_id);
+    for(const p of preds){
+      const r = rmap.get(String(p.match_id));
       const pts = pointsFor(p, r);
       totals.set(p.user_id, (totals.get(p.user_id)||0) + pts);
     }
-    // emails من profiles
-    const ids = [...totals.keys()];
-    const users = {};
-    for(const id of ids){
-      const {data} = await supabase.from('profiles').select('id,username').eq('id', id).maybeSingle();
-      users[id] = data?.username || id.slice(0,8);
+
+    // تأكد إدراج كل المستخدمين حتى لو 0
+    for(const prof of profs){
+      if(!totals.has(prof.id)) totals.set(prof.id, 0);
     }
-    const sorted = [...totals.entries()].sort((a,b)=> b[1]-a[1]);
-    $('#board').innerHTML = sorted.map(([uid,pts],i)=>`
+
+    // أسماء
+    const names = {};
+    for(const prof of profs){
+      names[prof.id] = prof.username || prof.id.slice(0,8);
+    }
+
+    // ترتيب
+    const sorted = [...totals.entries()].sort((a,b) =>
+      (b[1]-a[1]) || (names[a[0]]||'').localeCompare(names[b[0]]||'')
+    );
+
+    const html = sorted.map(([uid,pts],i)=>`
       <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:6px 0">
-        <div>#${i+1} • ${users[uid]}</div><div><strong>${pts}</strong> نقطة</div>
-      </div>`).join('') || '<div class="muted">لا يوجد نقاط بعد.</div>';
+        <div>#${i+1} • ${names[uid]||uid.slice(0,8)}</div>
+        <div><strong>${pts}</strong> نقطة</div>
+      </div>`).join('');
+
+    document.querySelector('#board').innerHTML = html || '<div class="muted">لا يوجد مشاركون بعد.</div>';
   }
 
   async function loadUserPreds(){
@@ -350,7 +373,7 @@
     if(!USER){ $('#myUpcoming').innerHTML = '<div class="muted">سجّل دخول لعرض سجلك.</div>'; return; }
     const now = new Date(); const in4 = new Date(now.getTime()+4*864e5);
     const mine = [...userPreds.values()].filter(p=> new Date(p.kickoff) > now && new Date(p.kickoff) <= in4 );
-    if(!mine.length){ $('#myUpcoming').innerHTML = '<div class="muted">لا يوجد توقعات محفوظة لِمباريات قادمة خلال ٤ أيام.</div>'; return; }
+    if(!mine.length){ $('#myUpcoming').innerHTML = '<div class="muted">لا يوجد توقعات محفوظة ضمن ٤ أيام.</div>'; return; }
     $('#myUpcoming').innerHTML = `
       <table class="table">
         <thead><tr><th>المباراة</th><th>التوقع</th><th>الوقت</th></tr></thead>
@@ -384,28 +407,25 @@
     const base = pick==='prev'? startOfWeek(new Date(new Date().setDate(new Date().getDate()-7))) : startOfWeek(new Date());
     const from = base.toISOString().slice(0,10), to = endOfWeek(base).toISOString().slice(0,10);
 
-    // التوقعات ضمن الأسبوع
-    const {data: preds} = await supabase.from('predictions')
-      .select('*').gte('kickoff', base.toISOString()).lt('kickoff', endOfWeek(base).toISOString());
-
-    // النتائج المخزنة
-    const {data: res} = await supabase.from('results').select('*');
-    const rmap = new Map((res||[]).map(r=>[String(r.match_id),r]));
-
-    // جلب مباريات الأسبوع لأسماء الفرق (تقليل نداءات)
+    const [predsRes, resRes] = await Promise.all([
+      supabase.from('predictions').select('*').gte('kickoff', base.toISOString()).lt('kickoff', endOfWeek(base).toISOString()),
+      supabase.from('results').select('*')
+    ]);
+    const preds = predsRes.data || [];
+    const res   = resRes.data   || [];
+    const rmap  = new Map(res.map(r=>[String(r.match_id), r]));
     const weekMatches = await fetchMatchesRange(from, to);
     const wmap = new Map(weekMatches.map(m=>[String(m.id), m]));
 
-    // تجميع بالتسخ
+    // group by user
     const byUser = new Map();
-    for(const p of (preds||[])){
-      const arr = byUser.get(p.user_id)||[]; arr.push(p); byUser.set(p.user_id, arr);
-    }
+    for(const p of preds){ const arr = byUser.get(p.user_id)||[]; arr.push(p); byUser.set(p.user_id, arr); }
+
     // emails
-    const users = {};
+    const names = {};
     for(const uid of byUser.keys()){
       const {data} = await supabase.from('profiles').select('id,username').eq('id', uid).maybeSingle();
-      users[uid] = data?.username || uid.slice(0,8);
+      names[uid] = data?.username || uid.slice(0,8);
     }
 
     let html = '';
@@ -417,7 +437,6 @@
         const label = m ? `${m.homeTeam.name} vs ${m.awayTeam.name}`
                         : `${p.team_home||''} vs ${p.team_away||''}`.trim() || mid;
 
-        // النتيجة الحقيقية
         const r = rmap.get(mid) || (m && m.status==='FINISHED' && m.score ? {
           match_id: mid,
           home_goals: m.score.fullTime.home,
@@ -426,13 +445,12 @@
         } : null);
 
         const resText = r ? `${r.home_goals} – ${r.away_goals}` : '—';
-        const pts = pointsFor(p, r);
-        total += pts;
+        const pts = pointsFor(p, r); total += pts;
         const cls = r ? (pts>0? 'ok':'bad') : '';
         return `<tr><td>${label}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${resText}</td><td class="${cls}">${r? pts : ''}</td></tr>`;
       }).join('');
 
-      html += `<div class="title" style="margin-top:6px">${users[uid]} — <span class="muted small">المجموع: ${total}</span></div>
+      html += `<div class="title" style="margin-top:6px">${names[uid]||uid.slice(0,8)} — <span class="muted small">المجموع: ${total}</span></div>
         <table class="table" style="margin:6px 0 12px 0">
           <thead><tr><th>المباراة</th><th>التوقع</th><th>النتيجة</th><th>النقاط</th></tr></thead>
           <tbody>${rows||''}</tbody>
