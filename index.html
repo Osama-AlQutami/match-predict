@@ -8,26 +8,39 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22d3ee;--danger:#ef4444;--border:#1f2937}
+    :root{
+      --bg:#0b1220;--bg2:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;
+      --accent:#22d3ee;--accent2:#10b981;--danger:#ef4444;--border:#1f2937
+    }
     *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,#0b1220,#0f172a 30%);color:var(--text);font-family:"Tajawal",system-ui,Arial}
-    .container{max-width:1000px;margin:0 auto;padding:24px}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg2) 30%);color:var(--text);font-family:"Tajawal",system-ui,Arial}
+    .container{max-width:1024px;margin:0 auto;padding:20px}
     header{display:flex;gap:12px;justify-content:space-between;align-items:center}
-    .brand{display:flex;gap:12px;align-items:center}
+    .brand{display:flex;gap:10px;align-items:center}
     .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px rgba(34,211,238,.15)}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .chip{border:1px solid var(--border);background:#0b1220;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
     .chip[disabled]{opacity:.5;cursor:not-allowed}
-    input{background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+    input{background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
     .btn{background:var(--accent);border:none;color:#0b1220;font-weight:700;border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn.secondary{background:#1f2937;color:var(--text)}
+    .btn.success{background:var(--accent2);color:#062a23}
+    .btn.danger{background:var(--danger);color:white}
     .grid{display:grid;gap:10px}
-    .grid.matches{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+    .grid.matches{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
     .muted{color:var(--muted)} .title{font-size:22px;font-weight:700} .small{font-size:12px}
     .center{text-align:center} .hidden{display:none} .kbd{font-family:ui-monospace,Menlo,monospace;background:#0b1220;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
     .pill{padding:3px 8px;border-radius:999px;border:1px solid var(--border)}
+    .team{display:flex;align-items:center;gap:8px}
+    .team img{width:22px;height:22px;object-fit:contain;background:#0b1220;border:1px solid var(--border);border-radius:6px}
+    .score input{width:52px;text-align:center;font-weight:700}
     #debug{background:#111827;border:1px dashed #374151;border-radius:10px;padding:10px;margin-bottom:10px;white-space:pre-wrap}
+    .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{border-bottom:1px solid var(--border);padding:6px 8px;text-align:right}
+    .ok{color:#10b981}.bad{color:#ef4444}
+    @media (max-width:600px){ .grid.matches{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -55,38 +68,60 @@
         <input id="password" placeholder="كلمة السر" type="password"/>
         <button id="doSignup" class="btn">إنشاء حساب</button>
         <button id="doSignin" class="btn secondary">دخول</button>
+        <button id="forgot" class="chip">نسيت كلمة السر؟</button>
       </div>
-      <div class="muted small" style="margin-top:8px">نستعمل Supabase مجانًا للمصادقة وتخزين النتائج.</div>
+      <div class="muted small" style="margin-top:8px">
+        زر «نسيت كلمة السر» سيرسل لك إيميل إعادة تعيين إلى صفحة <code>reset.html</code> في نفس الموقع.
+      </div>
     </section>
 
-    <!-- Fixed Settings (read-only) -->
+    <!-- Fixed scope summary -->
     <section class="card" style="margin-top:12px">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div class="title">الإعدادات (مقفلة مسبقًا)</div>
+      <div class="section-head">
+        <div class="title">النطاق</div>
         <div id="whoami" class="muted small">—</div>
       </div>
-      <div class="muted small" style="margin-top:6px">
-        المسابقات: <strong>PD, CL, PL</strong> • عدد الفرق المختارة: <strong id="fixedTeamCount">—</strong>
-      </div>
+      <div class="muted small">المسابقات: <strong>PD, CL, PL</strong> • الفرق المختارة: <strong id="fixedTeamCount">—</strong></div>
     </section>
 
     <!-- Matches -->
     <section class="card" style="margin-top:12px">
-      <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="section-head">
         <div class="title">المباريات القادمة</div>
-        <div class="muted small">التوقع مسموح حتى <span class="kbd">T-10m</span> قبل انطلاق المباراة.</div>
+        <div class="row">
+          <div class="muted small">التوقع مسموح حتى <span class="kbd">T-10m</span></div>
+          <button id="saveAll" class="btn success">حفظ كل التوقعات</button>
+        </div>
       </div>
-      <div id="matches" class="grid matches" style="margin-top:10px"></div>
-      <div id="noMatches" class="center muted hidden" style="margin-top:10px">لا يوجد مباريات ضمن النطاق الحالي.</div>
+      <div id="matches" class="grid matches"></div>
+      <div id="noMatches" class="center muted hidden" style="margin-top:10px">لا يوجد مباريات ضمن ٤ أيام قادمة.</div>
+    </section>
+
+    <!-- My upcoming saved predictions -->
+    <section class="card" style="margin-top:12px">
+      <div class="section-head"><div class="title">سجلّي (محفوظ ولم يبدأ)</div></div>
+      <div id="myUpcoming"></div>
+    </section>
+
+    <!-- Weekly history (all players) -->
+    <section class="card" style="margin-top:12px">
+      <div class="section-head">
+        <div class="title">التاريخ الأسبوعي</div>
+        <div class="row">
+          <select id="weekPick"></select>
+          <button id="loadWeek" class="chip">عرض</button>
+        </div>
+      </div>
+      <div id="weekly"></div>
     </section>
 
     <!-- Leaderboard -->
     <section class="card" style="margin-top:12px">
-      <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="section-head">
         <div class="title">الترتيب</div>
         <button id="recalc" class="chip">تحديث النقاط اليدوي</button>
       </div>
-      <div id="board" style="margin-top:8px"></div>
+      <div id="board"></div>
     </section>
   </div>
 
@@ -96,22 +131,23 @@
   /**** ===== إعدادات Supabase و Edge Function ===== ****/
   const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieG9mdXV3YWJ3cXVydmJnZmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MTUxNzQsImV4cCI6MjA3MTE5MTE3NH0.a45JBtzQI8so9z3lZ__aypUIafmhxeUOCkmBmbtQOHg";
-  const EDGE_BASE     = "https://wbxofuuwabwqurvbgfae.supabase.co/functions/v1/bright-function";
+  const EDGE_BASE     = "https://wbxofuuwabwqurvbgfae.supabase.co/functions/v1/bright-function"; // proxy
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  const edgeHeaders = { 'Authorization': `Bearer ${SUPABASE_ANON}`, 'apikey': SUPABASE_ANON };
 
   /**** ===== نطاق ثابت ===== ****/
   const FIXED_COMP_CODES = ['PD','CL','PL'];
   const FIXED_TEAM_IDS = [
-    81, 86, 4, 5, 524, 57, 58, 61, 62, 63, 64, 65, 66, 67, 71, 73, 76, 328, 341, 351, 354, 397, 402, 563, 1044
+    81,86,4,5,524,57,58,61,62,63,64,65,66,67,71,73,76,328,341,351,354,397,402,563,1044
   ];
+  document.getElementById('fixedTeamCount').textContent = String(FIXED_TEAM_IDS.length);
 
   /**** ===== Helpers ===== ****/
   const $ = (sel)=>document.querySelector(sel);
   const debugEl = $('#debug');
   function show(msg){ debugEl.textContent = msg; debugEl.classList.remove('hidden'); }
   function clearDebug(){ debugEl.classList.add('hidden'); debugEl.textContent = ''; }
-
   const fmtTime = (iso)=> new Date(iso).toLocaleString('ar-JO');
 
   function lockReason(kickoffISO){
@@ -120,6 +156,7 @@
     if(diffMin <= 10) return `مغلق (باقي ${Math.max(0, Math.floor(diffMin))} دقيقة)`;
     return null;
   }
+  function crest(id,fallback){ return `https://crests.football-data.org/${id}.svg`; }
 
   function pointsFor(pred, result){
     if(!result || result.status !== 'FINISHED') return 0;
@@ -131,14 +168,20 @@
     return 0;
   }
 
+  let USER=null;              // user object
+  const userPreds = new Map(); // match_id -> prediction
+
   async function refreshUser(){
     const { data: { user } } = await supabase.auth.getUser();
+    USER = user || null;
     const who = $('#whoami');
     if(user){
       $('#btnLogin').classList.add('hidden');
       $('#btnLogout').classList.remove('hidden');
       who.textContent = `مسجل: ${user.email}`;
       $('#authCard').classList.add('hidden');
+      // خزّن/حدّث الإيميل في profiles لكي يظهر في الترتيب
+      await supabase.from('profiles').upsert({ id:user.id, username:user.email });
     }else{
       $('#btnLogin').classList.remove('hidden');
       $('#btnLogout').classList.add('hidden');
@@ -146,22 +189,19 @@
     }
   }
 
-  // ===== جلب البيانات عبر Edge Function =====
-  const edgeHeaders = { 'Authorization': `Bearer ${SUPABASE_ANON}`, 'apikey': SUPABASE_ANON };
-
+  // ===== جلب البيانات عبر Edge Function (4 أيام فقط) =====
   async function fetchCompMatches(comp){
     const now  = new Date();
     const from = now.toISOString().slice(0,10);
-    const to   = new Date(now.getTime()+7*864e5).toISOString().slice(0,10);
+    const to   = new Date(now.getTime()+4*864e5).toISOString().slice(0,10); // 4 أيام
     const url  = `${EDGE_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
     const res  = await fetch(url, { headers: edgeHeaders });
     if(!res.ok){
-      let msg = `API ${res.status}`;
-      try{ const j = await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
+      let msg = `API ${res.status}`; try{ const j = await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
       throw new Error(`${msg} (المسابقة: ${comp})`);
     }
     const json = await res.json();
-    return json.matches || [];
+    return (json.matches || []).filter(m => ['TIMED','SCHEDULED'].includes(m.status));
   }
 
   function renderMatchCard(m){
@@ -169,36 +209,84 @@
     const card = document.createElement('div');
     card.className = 'card';
     const kickoff = fmtTime(m.utcDate);
-    const mid = m.id;
+    const mid = String(m.id);
+    const saved = userPreds.get(mid);
+
     card.innerHTML = `
-      <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="row" style="justify-content:space-between">
         <div>
-          <div class="title">${m.homeTeam.name} <span class="muted">vs</span> ${m.awayTeam.name}</div>
+          <div class="row">
+            <div class="team"><img src="${crest(m.homeTeam.id,m.homeTeam.crest)}" alt=""><span>${m.homeTeam.name}</span></div>
+            <span class="muted">vs</span>
+            <div class="team"><img src="${crest(m.awayTeam.id,m.awayTeam.crest)}" alt=""><span>${m.awayTeam.name}</span></div>
+          </div>
           <div class="muted small">${m.competition.name} • ${kickoff}</div>
         </div>
-        <div class="pill ${lock? 'muted':''}">${lock? lock : 'مفتوح للتوقع'}</div>
+        <div class="pill ${lock? 'muted':''}" id="pill_${mid}">${lock? lock : (saved? 'محفوظ' : 'مفتوح')}</div>
       </div>
-      <div class="row" style="margin-top:8px;align-items:center">
-        <input type="number" min="0" id="h_${mid}" placeholder="${m.homeTeam.tla||'H'}" style="width:90px">
+      <div class="row score" style="margin-top:8px">
+        <input type="number" min="0" id="h_${mid}" placeholder="${m.homeTeam.tla||'H'}">
         <span class="muted">—</span>
-        <input type="number" min="0" id="a_${mid}" placeholder="${m.awayTeam.tla||'A'}" style="width:90px">
-        <button class="btn" id="s_${mid}">حفظ التوقع</button>
-      </div>`;
+        <input type="number" min="0" id="a_${mid}" placeholder="${m.awayTeam.tla||'A'}">
+      </div>
+    `;
     $('#matches').appendChild(card);
-    card.querySelector(`#s_${mid}`).addEventListener('click', ()=> savePrediction(m));
-    if(lock){ card.querySelector(`#s_${mid}`).disabled = true; }
+
+    if(saved){
+      // امنع التعديل بعد الحفظ
+      card.querySelector(`#h_${mid}`).value = saved.home_goals;
+      card.querySelector(`#a_${mid}`).value = saved.away_goals;
+      card.querySelector(`#h_${mid}`).disabled = true;
+      card.querySelector(`#a_${mid}`).disabled = true;
+    }
+    if(lock){
+      card.querySelector(`#h_${mid}`).disabled = true;
+      card.querySelector(`#a_${mid}`).disabled = true;
+    }
   }
 
-  async function savePrediction(m){
-    const h = parseInt(document.getElementById(`h_${m.id}`).value, 10);
-    const a = parseInt(document.getElementById(`a_${m.id}`).value, 10);
-    if(Number.isNaN(h)||Number.isNaN(a)) return alert('حط النتيجة للطرفين');
-    const lock = lockReason(m.utcDate); if(lock) return alert('انتهى الوقت للتوقع');
-    const { data: { user } } = await supabase.auth.getUser();
-    if(!user) return alert('سجل دخول بالأول');
-    const row = { user_id: user.id, match_id: String(m.id), home_goals: h, away_goals: a, kickoff: new Date(m.utcDate).toISOString(), comp_id: m.competition.code || m.competition.id, team_home: m.homeTeam.name, team_away: m.awayTeam.name };
-    const {error} = await supabase.from('predictions').upsert(row, {onConflict: 'user_id,match_id'});
-    alert(error? error.message : 'انحفظ التوقع ✌️');
+  async function saveAll(){
+    if(!USER) return alert('سجل دخول بالأول');
+    const rows = [];
+    document.querySelectorAll('[id^="h_"]').forEach(inp=>{
+      const mid = inp.id.slice(2);
+      const a = document.getElementById(`a_${mid}`);
+      const lock = document.getElementById(`pill_${mid}`).textContent.startsWith('مغلق');
+      if(lock) return;
+      if(userPreds.has(mid)) return; // لا تعديل بعد الحفظ
+      const hV = parseInt(inp.value,10), aV = parseInt(a.value,10);
+      if(Number.isNaN(hV)||Number.isNaN(aV)) return;
+      rows.push({
+        user_id: USER.id, match_id: mid, home_goals: hV, away_goals: aV,
+        kickoff: new Date().toISOString() // لن تظهر؛ موجودة لأغراض الجدول
+      });
+    });
+    if(!rows.length) return alert('ما في توقعات جديدة للحفظ');
+    // ندخل بدون upsert حتى ما نسمح بالتعديل (unique constraint يمنع ازدواج)
+    const { error } = await supabase.from('predictions').insert(rows);
+    if(error){
+      // ممكن يرمي duplicate key لبعضها: نكمل ونعرض رسالة عامة
+      alert('انحفظت التوقعات المتاحة (تجاهلنا اللي محفوظة سابقًا)');
+    }else{
+      alert('تم الحفظ ✌️');
+    }
+    // حمّل التوقعات من جديد وعطّل الحقول
+    await loadUserPreds(); markSavedOnUI();
+    renderMyUpcoming();
+  }
+
+  function markSavedOnUI(){
+    document.querySelectorAll('[id^="h_"]').forEach(inp=>{
+      const mid = inp.id.slice(2);
+      const saved = userPreds.get(mid);
+      if(saved){
+        inp.value = saved.home_goals;
+        const a = document.getElementById(`a_${mid}`);
+        a.value = saved.away_goals;
+        inp.disabled = true; a.disabled = true;
+        const pill = document.getElementById(`pill_${mid}`); if(pill) pill.textContent = 'محفوظ';
+      }
+    });
   }
 
   async function renderLeaderboard(){
@@ -206,61 +294,147 @@
     const {data: res}   = await supabase.from('results').select('*');
     const map = new Map((res||[]).map(r=>[r.match_id, r]));
     const totals = new Map();
-    for(const p of (preds||[])){ const r = map.get(p.match_id); const pts = pointsFor(p, r); totals.set(p.user_id, (totals.get(p.user_id)||0) + pts); }
-    const ids = [...totals.keys()]; const users = {};
-    for(const id of ids){ const {data} = await supabase.from('profiles').select('id,username').eq('id', id).maybeSingle(); users[id] = data?.username || id.slice(0,8); }
+    for(const p of (preds||[])){
+      const r = map.get(p.match_id);
+      const pts = pointsFor(p, r);
+      totals.set(p.user_id, (totals.get(p.user_id)||0) + pts);
+    }
+    // emails من profiles
+    const ids = [...totals.keys()];
+    const users = {};
+    for(const id of ids){
+      const {data} = await supabase.from('profiles').select('id,username').eq('id', id).maybeSingle();
+      users[id] = data?.username || id.slice(0,8);
+    }
     const sorted = [...totals.entries()].sort((a,b)=> b[1]-a[1]);
     $('#board').innerHTML = sorted.map(([uid,pts],i)=>`
-      <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:8px 0">
+      <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:6px 0">
         <div>#${i+1} • ${users[uid]}</div><div><strong>${pts}</strong> نقطة</div>
       </div>`).join('') || '<div class="muted">لا يوجد نقاط بعد.</div>';
   }
 
+  async function loadUserPreds(){
+    if(!USER){ userPreds.clear(); return; }
+    const {data} = await supabase.from('predictions')
+      .select('match_id,home_goals,away_goals,kickoff')
+      .eq('user_id', USER.id);
+    userPreds.clear();
+    (data||[]).forEach(p=> userPreds.set(String(p.match_id), p));
+  }
+
+  async function renderMyUpcoming(){
+    if(!USER){ $('#myUpcoming').innerHTML = '<div class="muted">سجّل دخول لعرض سجلك.</div>'; return; }
+    const now = new Date(); const in4 = new Date(now.getTime()+4*864e5);
+    const mine = [...userPreds.values()].filter(p=> new Date(p.kickoff) > now && new Date(p.kickoff) <= in4 );
+    if(!mine.length){ $('#myUpcoming').innerHTML = '<div class="muted">لا يوجد توقعات محفوظة لِمباريات قادمة خلال ٤ أيام.</div>'; return; }
+    $('#myUpcoming').innerHTML = `
+      <table class="table">
+        <thead><tr><th>المباراة</th><th>التوقع</th><th>الوقت</th></tr></thead>
+        <tbody id="myUpcomingBody"></tbody>
+      </table>`;
+    const body = document.getElementById('myUpcomingBody');
+    for(const p of mine){
+      body.insertAdjacentHTML('beforeend',
+        `<tr><td>${p.match_id}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${fmtTime(p.kickoff)}</td></tr>`);
+    }
+  }
+
+  // Weekly history (all users)
+  function startOfWeek(d){
+    const dt = new Date(d); const day = (dt.getDay()+6)%7; // Monday=0
+    dt.setHours(0,0,0,0); dt.setDate(dt.getDate()-day); return dt;
+  }
+  function endOfWeek(s){ const e=new Date(s); e.setDate(e.getDate()+7); return e; }
+  function fillWeekPicker(){
+    const now = new Date();
+    const cur = startOfWeek(now); const prev = new Date(cur); prev.setDate(cur.getDate()-7);
+    const sel = document.getElementById('weekPick');
+    sel.innerHTML = `
+      <option value="cur">الأسبوع الحالي (${cur.toLocaleDateString('ar-JO')})</option>
+      <option value="prev">الأسبوع السابق (${prev.toLocaleDateString('ar-JO')})</option>`;
+  }
+  async function renderWeekly(){
+    const pick = document.getElementById('weekPick').value;
+    const base = pick==='prev'? startOfWeek(new Date(new Date().setDate(new Date().getDate()-7))) : startOfWeek(new Date());
+    const from = base.toISOString(); const to = endOfWeek(base).toISOString();
+
+    const {data: preds} = await supabase.from('predictions')
+      .select('*').gte('kickoff', from).lt('kickoff', to);
+
+    const {data: res} = await supabase.from('results').select('*');
+    const rmap = new Map((res||[]).map(r=>[r.match_id,r]));
+
+    // group by user
+    const byUser = new Map();
+    for(const p of (preds||[])){
+      const arr = byUser.get(p.user_id)||[]; arr.push(p); byUser.set(p.user_id, arr);
+    }
+    // emails
+    const users = {};
+    for(const uid of byUser.keys()){
+      const {data} = await supabase.from('profiles').select('id,username').eq('id', uid).maybeSingle();
+      users[uid] = data?.username || uid.slice(0,8);
+    }
+
+    let html = '';
+    for(const [uid,list] of byUser.entries()){
+      let total=0;
+      const rows = list.map(p=>{
+        const pts = pointsFor(p, rmap.get(p.match_id)); total+=pts;
+        return `<tr><td>${p.match_id}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${pts}</td></tr>`;
+      }).join('');
+      html += `<div class="title" style="margin-top:6px">${users[uid]} — <span class="muted small">المجموع: ${total}</span></div>
+        <table class="table" style="margin:6px 0 12px 0"><thead><tr><th>المباراة</th><th>التوقع</th><th>النقاط</th></tr></thead><tbody>${rows||''}</tbody></table>`;
+    }
+    $('#weekly').innerHTML = html || '<div class="muted">لا يوجد بيانات لهذا الأسبوع.</div>';
+  }
+
+  // ===== تهيئة الصفحة =====
   async function loadMatches(){
     clearDebug();
     $('#matches').innerHTML = ''; $('#noMatches').classList.add('hidden');
 
-    try{
-      let all = [];
-      for(const c of FIXED_COMP_CODES){
-        try{ all = all.concat(await fetchCompMatches(c)); }
-        catch(e){ show(e.message); }
-      }
-      // فلترة حسب الفرق الثابتة
-      const wanted = new Set(FIXED_TEAM_IDS.map(String));
-      all = all.filter(m=> wanted.has(String(m.homeTeam.id)) || wanted.has(String(m.awayTeam.id)) );
-      // فقط مباريات قادمة
-      all = all.filter(m=> ['TIMED','SCHEDULED'].includes(m.status));
-
-      if(!all.length){ $('#noMatches').classList.remove('hidden'); return; }
-      all.sort((a,b)=> new Date(a.utcDate)-new Date(b.utcDate));
-      all.forEach(renderMatchCard);
-    }catch(e){ show('خطأ عام: '+e.message); }
+    let all = [];
+    for(const c of FIXED_COMP_CODES){
+      try{ all = all.concat(await fetchCompMatches(c)); }
+      catch(e){ show(e.message); }
+    }
+    // فلترة حسب الفرق الثابتة
+    const wanted = new Set(FIXED_TEAM_IDS.map(String));
+    all = all.filter(m=> wanted.has(String(m.homeTeam.id)) || wanted.has(String(m.awayTeam.id)) );
+    if(!all.length){ $('#noMatches').classList.remove('hidden'); return; }
+    all.sort((a,b)=> new Date(a.utcDate)-new Date(b.utcDate));
+    all.forEach(renderMatchCard);
+    markSavedOnUI();
   }
 
-  // Attach listeners AFTER DOM is ready
   function init(){
-    // عدد الفرق في الملخص
-    const cnt = $('#fixedTeamCount'); if(cnt) cnt.textContent = String(FIXED_TEAM_IDS.length);
-
     window.addEventListener('error', (e)=> show('JS Error: '+ e.message));
     window.addEventListener('unhandledrejection', (e)=> show('Promise Error: '+ (e.reason?.message||e.reason)));
 
     // Auth
     $('#btnLogin').addEventListener('click', ()=> $('#authCard').classList.toggle('hidden'));
     $('#btnLogout').addEventListener('click', async ()=>{ await supabase.auth.signOut(); await refreshUser(); });
+    $('#doSignup').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signUp({email,password}); alert(error? error.message : 'تم إنشاء الحساب'); refreshUser(); });
+    $('#doSignin').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signInWithPassword({email,password}); alert(error? error.message : 'تم الدخول'); refreshUser(); });
 
+    // Reset password flow (same site)
+    const SITE_RESET_URL = location.origin + location.pathname.replace(/\/[^/]*$/, '/reset.html');
+    $('#forgot').addEventListener('click', async ()=>{
+      const email=$('#email').value.trim(); if(!email) return alert('اكتب الإيميل أولًا');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: SITE_RESET_URL });
+      alert(error? error.message : 'أرسلنا رابط تغيير كلمة السر لبريدك.');
+    });
+
+    $('#saveAll').addEventListener('click', saveAll);
     $('#recalc').addEventListener('click', async ()=>{
-      // تحديث النتائج النهائية لآخر 7 أيام عبر Edge (نفس الفكرة لو حبيت)
-      const now = new Date();
-      const from = new Date(now.getTime()-7*864e5).toISOString().slice(0,10);
-      const to   = now.toISOString().slice(0,10);
+      // تحديث نتائج آخر 7 أيام
+      const now = new Date(); const from = new Date(now.getTime()-7*864e5).toISOString().slice(0,10); const to = now.toISOString().slice(0,10);
       for(const c of FIXED_COMP_CODES){
         try{
           const url = `${EDGE_BASE}/competitions/${encodeURIComponent(c)}/matches?dateFrom=${from}&dateTo=${to}`;
           const res = await fetch(url, { headers: edgeHeaders });
-          if(!res.ok) continue;
-          const json = await res.json();
+          if(!res.ok) continue; const json = await res.json();
           const finished = (json.matches||[]).filter(x=> x.status==='FINISHED');
           for(const m of finished){
             await supabase.from('results').upsert({
@@ -275,9 +449,17 @@
       renderLeaderboard();
     });
 
-    refreshUser();
-    loadMatches();
-    renderLeaderboard();
+    fillWeekPicker();
+    $('#loadWeek').addEventListener('click', renderWeekly);
+
+    (async function start(){
+      await refreshUser();
+      await loadUserPreds();
+      await loadMatches();
+      renderMyUpcoming();
+      renderLeaderboard();
+      renderWeekly();
+    })();
   }
   document.addEventListener('DOMContentLoaded', init);
   </script>
