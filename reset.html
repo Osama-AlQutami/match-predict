@@ -31,7 +31,6 @@
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   const msg = (t)=> document.getElementById('msg').textContent = t;
 
-  // لو رجعت tokens في الـ hash من الإيميل نسجّل الجلسة
   (async function ensureSessionFromHash(){
     const h = new URLSearchParams(location.hash.slice(1));
     const access_token  = h.get('access_token');
