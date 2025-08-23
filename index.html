@@ -71,11 +71,9 @@
         <button id="saveScope" class="btn">حفظ الفرق/المسابقات</button>
       </div>
       <div class="muted small" style="margin-top:6px">
-        نستعمل API مجاني من football-data.org — حط التوكن تبعك تحت. <span class="pill">ضروري</span>
+        يتم جلب البيانات عبر Edge Function — لا داعي لإدخال Football-Data token هنا.
       </div>
       <div class="row" style="margin-top:8px">
-        <input id="footballToken" placeholder="Football-Data API Token" style="min-width:360px"/>
-        <button id="saveToken" class="chip">حفظ التوكن محليًا</button>
         <button id="showTeamIds" class="chip">عرض IDs الفرق للمسابقات</button>
       </div>
       <div id="teamsList" class="muted small" style="margin-top:8px;white-space:pre-wrap"></div>
@@ -104,20 +102,19 @@
   <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
-  /**** ===== إعدادات Supabase ===== ****/
-  const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co/functions/v1/bright-function";
+  /**** ===== إعدادات Supabase و Edge Function ===== ****/
+  const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieG9mdXV3YWJ3cXVydmJnZmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MTUxNzQsImV4cCI6MjA3MTE5MTE3NH0.a45JBtzQI8so9z3lZ__aypUIafmhxeUOCkmBmbtQOHg";
+  const EDGE_BASE     = "https://wbxofuuwabwqurvbgfae.supabase.co/functions/v1/bright-function";
+
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
   /**** ===== Helpers ===== ****/
-  const FOOTBALL_BASE = 'https://api.football-data.org/v4';
   const $ = (sel)=>document.querySelector(sel);
   const debugEl = $('#debug');
   function show(msg){ debugEl.textContent = msg; debugEl.classList.remove('hidden'); }
   function clearDebug(){ debugEl.classList.add('hidden'); debugEl.textContent = ''; }
 
-  const getToken = ()=> localStorage.getItem('FOOTBALL_TOKEN') || '';
-  const saveToken = (t)=> localStorage.setItem('FOOTBALL_TOKEN', t);
   function parseComps(s){ return (s||'WC,CL,PD,PL').replace(/-/g,',').split(',').map(x=>x.trim()).filter(Boolean); }
   const fmtTime = (iso)=> new Date(iso).toLocaleString('ar-JO');
 
@@ -127,6 +124,7 @@
     if(diffMin <= 10) return `مغلق (باقي ${Math.max(0, Math.floor(diffMin))} دقيقة)`;
     return null;
   }
+
   function pointsFor(pred, result){
     if(!result || result.status !== 'FINISHED') return 0;
     const ph=pred.home_goals, pa=pred.away_goals;
@@ -152,15 +150,18 @@
     }
   }
 
+  // ===== جلب البيانات عبر Edge Function =====
+  const edgeHeaders = { 'Authorization': `Bearer ${SUPABASE_ANON}`, 'apikey': SUPABASE_ANON };
+
   async function fetchCompMatches(comp){
-const headers = {}; // ما عاد نحتاج التوكن من المتصفح
-    const now = new Date();
+    const now  = new Date();
     const from = now.toISOString().slice(0,10);
     const to   = new Date(now.getTime()+7*864e5).toISOString().slice(0,10);
-    const url  = `${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
-    const res  = await fetch(url,{headers});
+    const url  = `${EDGE_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
+    const res  = await fetch(url, { headers: edgeHeaders });
     if(!res.ok){
-      let msg = `API ${res.status}`; try{ const j=await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
+      let msg = `API ${res.status}`;
+      try{ const j = await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
       throw new Error(`${msg} (المسابقة: ${comp})`);
     }
     const json = await res.json();
@@ -168,10 +169,11 @@ const headers = {}; // ما عاد نحتاج التوكن من المتصفح
   }
 
   async function fetchCompTeams(comp){
-    const token = getToken(); const headers = token? { 'X-Auth-Token': token } : {};
-    const res = await fetch(`${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/teams`, {headers});
+    const url = `${EDGE_BASE}/competitions/${encodeURIComponent(comp)}/teams`;
+    const res = await fetch(url, { headers: edgeHeaders });
     if(!res.ok){
-      let msg = `API ${res.status}`; try{ const j=await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
+      let msg = `API ${res.status}`;
+      try{ const j = await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
       throw new Error(`${msg} (teams: ${comp})`);
     }
     const j = await res.json(); return (j.teams||[]).map(t=>({id:t.id,name:t.name,tla:t.tla}));
@@ -269,25 +271,22 @@ const headers = {}; // ما عاد نحتاج التوكن من المتصفح
 
   // Attach listeners AFTER DOM is ready
   function init(){
-    // Global error box
     window.addEventListener('error', (e)=> show('JS Error: '+ e.message));
     window.addEventListener('unhandledrejection', (e)=> show('Promise Error: '+ (e.reason?.message||e.reason)));
 
-    // Auth buttons
+    // Auth
     $('#btnLogin').addEventListener('click', ()=> $('#authCard').classList.toggle('hidden'));
     $('#btnLogout').addEventListener('click', async ()=>{ await supabase.auth.signOut(); await refreshUser(); });
     $('#doSignup').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signUp({email,password}); alert(error? error.message : 'تم إنشاء الحساب'); refreshUser(); });
     $('#doSignin').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signInWithPassword({email,password}); alert(error? error.message : 'تم الدخول'); refreshUser(); });
 
-    // Settings buttons
+    // Settings
     $('#saveScope').addEventListener('click', ()=>{ localStorage.setItem('COMP_IDS', ($('#competitionIds').value||'').replace(/-/g,',')); localStorage.setItem('TEAM_IDS', $('#teamIds').value||''); loadMatches(); });
-    $('#saveToken').addEventListener('click', ()=>{ saveToken($('#footballToken').value); loadMatches(); });
     $('#showTeamIds').addEventListener('click', listTeams);
 
-    // Prefill inputs
+    // Prefill
     $('#competitionIds').value = (localStorage.getItem('COMP_IDS') || 'WC,CL,PD,PL').replace(/,/g,', ');
     $('#teamIds').value        = (localStorage.getItem('TEAM_IDS') || '');
-    $('#footballToken').value  = getToken();
 
     refreshUser();
     loadMatches();
