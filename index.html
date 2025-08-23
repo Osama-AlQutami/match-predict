@@ -3,14 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Osama - Mohammad Predictions</title>
+  <title>Osama – Mohammad Predictions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22d3ee;--danger:#ef4444;--ok:#10b981;--border:#1f2937
-    }
+    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22d3ee;--danger:#ef4444;--border:#1f2937}
     *{box-sizing:border-box}
     body{margin:0;background:linear-gradient(180deg,#0b1220,#0f172a 30%);color:var(--text);font-family:"Tajawal",system-ui,Arial}
     .container{max-width:1000px;margin:0 auto;padding:24px}
@@ -21,27 +19,25 @@
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .chip{border:1px solid var(--border);background:#0b1220;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
     .chip[disabled]{opacity:.5;cursor:not-allowed}
-    input,select{background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+    input{background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
     .btn{background:var(--accent);border:none;color:#0b1220;font-weight:700;border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn.secondary{background:#1f2937;color:var(--text)}
-    .btn.danger{background:var(--danger);color:white}
     .grid{display:grid;gap:10px}
     .grid.matches{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-    .muted{color:var(--muted)}
-    .title{font-size:22px;font-weight:700}
-    .small{font-size:12px}
-    .center{text-align:center}
-    .hidden{display:none}
-    .kbd{font-family:ui-monospace,Menlo,monospace;background:#0b1220;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+    .muted{color:var(--muted)} .title{font-size:22px;font-weight:700} .small{font-size:12px}
+    .center{text-align:center} .hidden{display:none} .kbd{font-family:ui-monospace,Menlo,monospace;background:#0b1220;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
     .pill{padding:3px 8px;border-radius:999px;border:1px solid var(--border)}
+    #debug{background:#111827;border:1px dashed #374151;border-radius:10px;padding:10px;margin-bottom:10px;white-space:pre-wrap}
   </style>
 </head>
 <body>
   <div class="container">
+    <div id="debug" class="hidden"></div>
+
     <header>
       <div class="brand"><div class="dot"></div>
         <div>
-          <div style="font-weight:700">Osama - Mohammad Predictions</div>
+          <div style="font-weight:700">Osama – Mohammad Predictions</div>
           <div class="muted small">لعبة توقع نتائج المباريات — مجانية 100%</div>
         </div>
       </div>
@@ -63,46 +59,29 @@
       <div class="muted small" style="margin-top:8px">نستعمل Supabase مجانًا للمصادقة وتخزين النتائج.</div>
     </section>
 
-    <!-- Admin: choose competitions & teams -->
+    <!-- Settings -->
     <section class="card" style="margin-top:12px">
       <div class="row" style="justify-content:space-between;align-items:center">
         <div class="title">الإعدادات</div>
         <div id="whoami" class="muted small">—</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <input id="competitionIds" placeholder="IDs المسابقات (مثلاً: PL, CLU)" style="min-width:260px"/>
-        <input id="teamIds" placeholder="IDs الفرق (comma-separated اختياري)" style="min-width:260px"/>
+        <input id="competitionIds" placeholder="أمثلة: WC-CL-PD-PL أو PL فقط" style="min-width:260px"/>
+        <input id="teamIds" placeholder="IDs الفرق (اختياري، مفصولة بفواصل)" style="min-width:260px"/>
         <button id="saveScope" class="btn">حفظ الفرق/المسابقات</button>
       </div>
-      <div class="muted small" style="margin-top:6px">نستعمل API مجاني من football-data.org — حط التوكن تبعك تحت.
-        <span class="pill">مجاني</span>
+      <div class="muted small" style="margin-top:6px">
+        نستعمل API مجاني من football-data.org — حط التوكن تبعك تحت. <span class="pill">ضروري</span>
       </div>
       <div class="row" style="margin-top:8px">
         <input id="footballToken" placeholder="Football-Data API Token" style="min-width:360px"/>
         <button id="saveToken" class="chip">حفظ التوكن محليًا</button>
-      </div>
-      <div class="row" style="margin-top:8px">
         <button id="showTeamIds" class="chip">عرض IDs الفرق للمسابقات</button>
-      </div>
-      <div class="row" style="margin-top:8px;gap:8px;align-items:center">
-        <button id="showTeamIds" class="chip">عرض IDs الفرق للمسابقات</button>
-        <button id="pickTeams" class="chip">اختيار فرق</button>
-        <span id="adminInfo" class="muted small"></span>
-        <button id="lockAdmin" class="chip">قفل الإعدادات على إيميلي</button>
-        <button id="unlockAdmin" class="chip hidden">إلغاء القفل</button>
       </div>
       <div id="teamsList" class="muted small" style="margin-top:8px;white-space:pre-wrap"></div>
-      <div id="teamsPicker" class="card hidden" style="margin-top:8px">
-        <div class="title">اختيار فرق</div>
-        <div id="teamsPickerBody" class="muted small" style="margin-top:6px">جاري التحضير...</div>
-        <div class="row" style="margin-top:10px">
-          <button id="applyTeams" class="btn">تطبيق</button>
-          <button id="cancelTeams" class="btn secondary">إلغاء</button>
-        </div>
-      </div>
     </section>
 
-    <!-- Upcoming matches & predictions -->
+    <!-- Matches -->
     <section class="card" style="margin-top:12px">
       <div class="row" style="justify-content:space-between;align-items:center">
         <div class="title">المباريات القادمة</div>
@@ -122,267 +101,81 @@
     </section>
   </div>
 
-  <!-- Supabase CDN -->
+  <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
-  /**** ======== الإعدادات (بدّل القيم أدناه) ======== ****/
-  const SUPABASE_URL = "https://wbxofuuwabwqurvbgfae.supabase.co"; // ← تم التعديل
-  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieG9mdXV3YWJ3cXVydmJnZmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MTUxNzQsImV4cCI6MjA3MTE5MTE3NH0.a45JBtzQI8so9z3lZ__aypUIafmhxeUOCkmBmbtQOHg";                     // ← تم التعديل
-  // ملاحظة: توكن football-data نحفظه في localStorage عندك كـ FOOTBALL_TOKEN
-
-  // مسابقات افتراضية (تقدر تغير من الواجهة):
-  // PL=Premier League, BL1=Bundesliga, PD=La Liga, SA=Serie A, FL1=Ligue 1
-  const DEFAULT_COMP_IDS = "WC,CL,PD,PL"; // ابدأ بـ PL فقط للتجربة ثم أضف باقي الأكواد
-
-  /**** ======== Supabase init ======== ****/
+  /**** ===== إعدادات Supabase ===== ****/
+  const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieG9mdXV3YWJ3cXVydmJnZmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MTUxNzQsImV4cCI6MjA3MTE5MTE3NH0.a45JBtzQI8so9z3lZ__aypUIafmhxeUOCkmBmbtQOHg";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Debug helper: يعرض سبب الخطأ أعلى الصفحة بدون ما يوقف الموقع
-  function showErr(ctx, err){
-    const msg = (err && (err.message || err.error || err.statusText)) || String(err);
-    console.error('[ERR]', ctx, err);
-    let box = document.getElementById('debugErr');
-    if(!box){
-      box = document.createElement('div');
-      box.id='debugErr'; box.style.margin='10px 0';
-      box.style.padding='10px'; box.style.border='1px dashed #374151';
-      box.style.background='#111827'; box.style.borderRadius='10px';
-      box.style.color='#e5e7eb'; box.className='small';
-      document.querySelector('.container').prepend(box);
-    }
-    box.innerHTML = `<strong>خطأ:</strong> ${ctx} — ${msg}`;
-  }
-
-  /** جداول مطلوبة في Supabase (SQL):
-  -- profiles
-  create table if not exists profiles (
-    id uuid primary key references auth.users(id) on delete cascade,
-    username text unique,
-    created_at timestamp default now()
-  );
-  alter table profiles enable row level security;
-  create policy "public read profiles" on profiles for select using (true);
-  create policy "user can insert self" on profiles for insert with check (auth.uid() = id);
-
-  -- predictions
-  create table if not exists predictions (
-    id bigserial primary key,
-    user_id uuid references auth.users(id) on delete cascade,
-    match_id text not null,
-    home_goals int not null,
-    away_goals int not null,
-    kickoff timestamptz not null,
-    comp_id text,
-    team_home text,
-    team_away text,
-    created_at timestamptz default now(),
-    unique(user_id, match_id)
-  );
-  alter table predictions enable row level security;
-  create policy "owner rw" on predictions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-  create policy "leaderboard can read" on predictions for select using (true);
-
-  -- scores (cache نقاط نهائية لكل مباراة)
-  create table if not exists results (
-    match_id text primary key,
-    home_goals int,
-    away_goals int,
-    status text,
-    updated_at timestamptz default now()
-  );
-  alter table results enable row level security;
-  create policy "public read results" on results for select using (true);
-  create policy "service can write" on results for insert with check (true);
-  create policy "service can update" on results for update using (true) with check (true);
-  */
-
-  /**** ======== Helpers ======== ****/
-  const $ = (sel)=>document.querySelector(sel);
-  const matchesEl = $('#matches');
-  const noMatchesEl = $('#noMatches');
-  const boardEl = $('#board');
-  const whoamiEl = $('#whoami');
-
+  /**** ===== Helpers ===== ****/
   const FOOTBALL_BASE = 'https://api.football-data.org/v4';
+  const $ = (sel)=>document.querySelector(sel);
+  const debugEl = $('#debug');
+  function show(msg){ debugEl.textContent = msg; debugEl.classList.remove('hidden'); }
+  function clearDebug(){ debugEl.classList.add('hidden'); debugEl.textContent = ''; }
+
   const getToken = ()=> localStorage.getItem('FOOTBALL_TOKEN') || '';
   const saveToken = (t)=> localStorage.setItem('FOOTBALL_TOKEN', t);
-
-  const getScope = ()=>({
-    comps: (localStorage.getItem('COMP_IDS')||DEFAULT_COMP_IDS).replace(/-/g,',').split(',').map(x=>x.trim()).filter(Boolean),
-    teams: (localStorage.getItem('TEAM_IDS')||'').split(',').map(x=>x.trim()).filter(Boolean)
-  });
-  const saveScope = (comps, teams)=>{
-    localStorage.setItem('COMP_IDS', comps);
-    localStorage.setItem('TEAM_IDS', teams);
-  }
-
+  function parseComps(s){ return (s||'WC,CL,PD,PL').replace(/-/g,',').split(',').map(x=>x.trim()).filter(Boolean); }
   const fmtTime = (iso)=> new Date(iso).toLocaleString('ar-JO');
 
   function lockReason(kickoffISO){
     const k = new Date(kickoffISO).getTime();
-    const now = Date.now();
-    const diffMin = (k - now) / 60000;
+    const diffMin = (k - Date.now()) / 60000;
     if(diffMin <= 10) return `مغلق (باقي ${Math.max(0, Math.floor(diffMin))} دقيقة)`;
     return null;
   }
-    return null;
-  }
-
   function pointsFor(pred, result){
     if(!result || result.status !== 'FINISHED') return 0;
     const ph=pred.home_goals, pa=pred.away_goals;
     const rh=result.home_goals, ra=result.away_goals;
     const predSign = Math.sign(ph-pa), realSign = Math.sign(rh-ra);
-    if(ph===rh && pa===ra) return 3; // exact
-    if(predSign===realSign) return 1; // correct outcome (فائز/تعادل)
+    if(ph===rh && pa===ra) return 3;
+    if(predSign===realSign) return 1;
     return 0;
   }
 
-  /**** ======== Auth UI ======== ****/
   async function refreshUser(){
     const { data: { user } } = await supabase.auth.getUser();
+    const who = $('#whoami');
     if(user){
       $('#btnLogin').classList.add('hidden');
       $('#btnLogout').classList.remove('hidden');
-      whoamiEl.textContent = `مسجل: ${user.email}`;
+      who.textContent = `مسجل: ${user.email}`;
       $('#authCard').classList.add('hidden');
     }else{
       $('#btnLogin').classList.remove('hidden');
       $('#btnLogout').classList.add('hidden');
-      whoamiEl.textContent = 'غير مسجل';
+      who.textContent = 'غير مسجل';
     }
   }
 
-  $('#btnLogin').onclick = ()=> $('#authCard').classList.toggle('hidden');
-  $('#btnLogout').onclick = async ()=>{ await supabase.auth.signOut(); await refreshUser(); };
-  $('#doSignup').onclick = async ()=>{
-    const {email, password} = {email: $('#email').value, password: $('#password').value};
-    const {error} = await supabase.auth.signUp({email,password});
-    alert(error? error.message : 'تم إنشاء الحساب. افحص بريدك للتأكيد (إن طُلِب).');
-    refreshUser();
-  };
-  $('#doSignin').onclick = async ()=>{
-    const {email, password} = {email: $('#email').value, password: $('#password').value};
-    const {error} = await supabase.auth.signInWithPassword({email,password});
-    alert(error? error.message : 'تم الدخول');
-    refreshUser();
-  };
-
-  // Save scope/token
-  $('#saveScope').onclick = ()=>{
-    saveScope($('#competitionIds').value, $('#teamIds').value);
-    loadMatches();
-  }
-  $('#saveToken').onclick = ()=>{
-    saveToken($('#footballToken').value);
-    loadMatches();
-  }
-
-  /**** ======== Fetch fixtures from Football-Data ======== ****/
   async function fetchCompMatches(comp){
     const token = getToken();
     const headers = token? { 'X-Auth-Token': token } : {};
     const now = new Date();
     const from = now.toISOString().slice(0,10);
-    const to = new Date(now.getTime()+7*864e5).toISOString().slice(0,10);
-    const url = `${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
-    try{
-      const res = await fetch(url, {headers});
-      if(!res.ok){
-        let apiMsg = `API ${res.status}`;
-        try{ const j = await res.json(); if(j && (j.message||j.error)){ apiMsg += ` — ${j.message||j.error}`; } }catch(_){ /* ignore */ }
-        throw new Error(apiMsg + ` (المسابقة: ${comp})`);
-      }
-      const json = await res.json();
-      return json.matches || [];
-    }catch(e){ showErr('fetchCompMatches', e); return []; }
+    const to   = new Date(now.getTime()+7*864e5).toISOString().slice(0,10);
+    const url  = `${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
+    const res  = await fetch(url,{headers});
+    if(!res.ok){
+      let msg = `API ${res.status}`; try{ const j=await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
+      throw new Error(`${msg} (المسابقة: ${comp})`);
+    }
+    const json = await res.json();
+    return json.matches || [];
   }
 
   async function fetchCompTeams(comp){
-    const token = getToken();
-    const headers = token? { 'X-Auth-Token': token } : {};
-    const url = `${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/teams`;
-    try{
-      const res = await fetch(url,{headers});
-      if(!res.ok){
-        let msg = `API ${res.status}`; try{ const j=await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){ }
-        throw new Error(`${msg} (teams: ${comp})`);
-      }
-      const json = await res.json();
-      return (json.teams||[]).map(t=>({id:t.id,name:t.name,tla:t.tla}));
-    }catch(e){ console.error(e); return []; }
-  }
-
-  async function showTeamIds(){
-    const scope = getScope(); const out = document.getElementById('teamsList'); out.textContent = 'جارِ الجلب...';
-    let txt = '';
-    for(const c of scope.comps){
-      const teams = await fetchCompTeams(c);
-      if(!teams.length){ txt += `${c}: لا يوجد/تعذر الجلب
-`; continue; }
-      txt += `${c}:
-` + teams.map(t=>`  ${t.id} — ${t.name}${t.tla? ' ('+t.tla+')':''}`).join('
-') + '
-';
+    const token = getToken(); const headers = token? { 'X-Auth-Token': token } : {};
+    const res = await fetch(`${FOOTBALL_BASE}/competitions/${encodeURIComponent(comp)}/teams`, {headers});
+    if(!res.ok){
+      let msg = `API ${res.status}`; try{ const j=await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
+      throw new Error(`${msg} (teams: ${comp})`);
     }
-    out.textContent = txt || 'لم يتم العثور على فرق.';
-  }
-
-  async function openTeamsPicker(){
-    const scope = getScope();
-    const picker = document.getElementById('teamsPicker');
-    const body = document.getElementById('teamsPickerBody');
-    picker.classList.remove('hidden'); body.textContent = 'جارِ التحميل...';
-    let groups = [];
-    for(const c of scope.comps){
-      const teams = await fetchCompTeams(c);
-      if(teams.length){ groups.push({code:c, teams}); }
-    }
-    if(!groups.length){ body.textContent = 'لا يوجد فرق — تأكد من الكود/التوكن.'; return; }
-    body.innerHTML = groups.map(g=>`<div style="margin:8px 0"><div><strong>${g.code}</strong></div>
-      ${g.teams.map(t=>`<label style="display:inline-block;margin:4px 8px 0 0"><input type="checkbox" name="teamBox" value="${t.id}"> ${t.name} <span class="muted small">(${t.id}${t.tla? '/'+t.tla:''})</span></label>`).join('')}</div>`).join('');
-  }
-  function closeTeamsPicker(){ document.getElementById('teamsPicker').classList.add('hidden'); }
-  function applyTeams(){
-    const ids = [...document.querySelectorAll('input[name="teamBox"]:checked')].map(i=>i.value);
-    document.getElementById('teamIds').value = ids.join(',');
-    saveScope(document.getElementById('competitionIds').value, document.getElementById('teamIds').value);
-    closeTeamsPicker();
-  }: لا يوجد/تعذر الجلب
-`; continue; }
-      txt += `${c}:
-` + teams.map(t=>`  ${t.id} — ${t.name}${t.tla? ' ('+t.tla+')':''}`).join('
-') + '
-';
-    }
-    out.textContent = txt || 'لم يتم العثور على فرق.';
-  }
-
-  async function loadMatches(){
-    matchesEl.innerHTML = ''; noMatchesEl.classList.add('hidden');
-    const scope = getScope();
-    $('#competitionIds').value = scope.comps.join(',');
-    $('#teamIds').value = scope.teams.join(',');
-    $('#footballToken').value = getToken();
-    try{
-      let all = []; let hadError = false;
-      for(const c of scope.comps){
-        const part = await fetchCompMatches(c);
-        if(!Array.isArray(part)) hadError = true;
-        all = all.concat(part||[]);
-      }
-      if(scope.teams.length){
-        all = all.filter(m=> scope.teams.includes(String(m.homeTeam.id)) || scope.teams.includes(String(m.awayTeam.id)) );
-      }
-      all = all.filter(m=> ['TIMED','SCHEDULED'].includes(m.status));
-      if(!all.length){
-        noMatchesEl.classList.remove('hidden');
-        noMatchesEl.textContent = hadError ? 'تعذر جلب بعض البيانات — تأكد من التوكن وجرّب دوري واحد فقط (PL) أولًا.' : 'لا يوجد مباريات ضمن النطاق الحالي.';
-        return;
-      }
-      all.sort((a,b)=> new Date(a.utcDate)-new Date(b.utcDate));
-      all.forEach(renderMatchCard);
-    }catch(e){ showErr('loadMatches', e); noMatchesEl.classList.remove('hidden'); noMatchesEl.textContent = 'تعذر جلب البيانات.'; }
+    const j = await res.json(); return (j.teams||[]).map(t=>({id:t.id,name:t.name,tla:t.tla}));
   }
 
   function renderMatchCard(m){
@@ -390,7 +183,7 @@
     const card = document.createElement('div');
     card.className = 'card';
     const kickoff = fmtTime(m.utcDate);
-    const mid = m.id; // football-data match id
+    const mid = m.id;
     card.innerHTML = `
       <div class="row" style="justify-content:space-between;align-items:center">
         <div>
@@ -404,13 +197,10 @@
         <span class="muted">—</span>
         <input type="number" min="0" id="a_${mid}" placeholder="${m.awayTeam.tla||'A'}" style="width:90px">
         <button class="btn" id="s_${mid}">حفظ التوقع</button>
-      </div>
-    `;
-    matchesEl.appendChild(card);
-
-    const saveBtn = card.querySelector(`#s_${mid}`);
-    saveBtn.onclick = ()=> savePrediction(m);
-    if(lock){ saveBtn.disabled = true; }
+      </div>`;
+    $('#matches').appendChild(card);
+    card.querySelector(`#s_${mid}`).addEventListener('click', ()=> savePrediction(m));
+    if(lock){ card.querySelector(`#s_${mid}`).disabled = true; }
   }
 
   async function savePrediction(m){
@@ -420,118 +210,91 @@
     const lock = lockReason(m.utcDate); if(lock) return alert('انتهى الوقت للتوقع');
     const { data: { user } } = await supabase.auth.getUser();
     if(!user) return alert('سجل دخول بالأول');
-    const row = {
-      user_id: user.id,
-      match_id: String(m.id),
-      home_goals: h,
-      away_goals: a,
-      kickoff: new Date(m.utcDate).toISOString(),
-      comp_id: m.competition.code || m.competition.id,
-      team_home: m.homeTeam.name,
-      team_away: m.awayTeam.name
-    };
+    const row = { user_id: user.id, match_id: String(m.id), home_goals: h, away_goals: a, kickoff: new Date(m.utcDate).toISOString(), comp_id: m.competition.code || m.competition.id, team_home: m.homeTeam.name, team_away: m.awayTeam.name };
     const {error} = await supabase.from('predictions').upsert(row, {onConflict: 'user_id,match_id'});
     alert(error? error.message : 'انحفظ التوقع ✌️');
   }
 
-  /**** ======== Leaderboard (simple) ======== ****/
-  async function recalcScores(){
-    // Pull finished results for last 7 days for the same competitions
-    const token = getToken(); const headers = token? { 'X-Auth-Token': token } : {};
-    const scope = getScope();
-    const now = new Date();
-    const from = new Date(now.getTime()-7*864e5).toISOString().slice(0,10);
-    const to = now.toISOString().slice(0,10);
-    for(const c of scope.comps){
-      const url = `${FOOTBALL_BASE}/competitions/${encodeURIComponent(c)}/matches?dateFrom=${from}&dateTo=${to}`;
-      const res = await fetch(url,{headers});
-      if(!res.ok) continue; const json = await res.json();
-      const finished = (json.matches||[]).filter(x=> x.status==='FINISHED');
-      for(const m of finished){
-        await supabase.from('results').upsert({
-          match_id: String(m.id),
-          home_goals: m.score.fullTime.home,
-          away_goals: m.score.fullTime.away,
-          status: m.status
-        });
-      }
-    }
-    renderLeaderboard();
-  }
-
   async function renderLeaderboard(){
     const {data: preds} = await supabase.from('predictions').select('*');
-    const {data: res} = await supabase.from('results').select('*');
-    const map = new Map(res?.map(r=>[r.match_id, r]));
+    const {data: res}   = await supabase.from('results').select('*');
+    const map = new Map((res||[]).map(r=>[r.match_id, r]));
     const totals = new Map();
-    for(const p of (preds||[])){
-      const r = map.get(p.match_id);
-      const pts = pointsFor(p, r);
-      const cur = totals.get(p.user_id)||0; totals.set(p.user_id, cur+pts);
-    }
-    // Map user ids to emails
-    const ids = [...totals.keys()];
-    const users = {};
-    for(const id of ids){
-      const {data} = await supabase.from('profiles').select('id,username').eq('id', id).maybeSingle();
-      users[id] = data?.username || id.slice(0,8);
-    }
+    for(const p of (preds||[])){ const r = map.get(p.match_id); const pts = pointsFor(p, r); totals.set(p.user_id, (totals.get(p.user_id)||0) + pts); }
+    const ids = [...totals.keys()]; const users = {};
+    for(const id of ids){ const {data} = await supabase.from('profiles').select('id,username').eq('id', id).maybeSingle(); users[id] = data?.username || id.slice(0,8); }
     const sorted = [...totals.entries()].sort((a,b)=> b[1]-a[1]);
-    const html = sorted.map(([uid,pts],i)=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:8px 0">
-      <div>#${i+1} • ${users[uid]}</div><div><strong>${pts}</strong> نقطة</div>
-    </div>`).join('');
-    boardEl.innerHTML = html || '<div class="muted">لا يوجد نقاط بعد.</div>';
+    $('#board').innerHTML = sorted.map(([uid,pts],i)=>`
+      <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:8px 0">
+        <div>#${i+1} • ${users[uid]}</div><div><strong>${pts}</strong> نقطة</div>
+      </div>`).join('') || '<div class="muted">لا يوجد نقاط بعد.</div>';
   }
 
-  $('#recalc').onclick = recalcScores;
+  async function loadMatches(){
+    clearDebug();
+    $('#matches').innerHTML = ''; $('#noMatches').classList.add('hidden');
 
-  // start
-  (async function init(){
-    await refreshUser();
-    // أزرار جديدة
-    const btnShow = document.getElementById('showTeamIds'); if(btnShow) btnShow.onclick = showTeamIds;
-    const btnPick = document.getElementById('pickTeams'); if(btnPick) btnPick.onclick = openTeamsPicker;
-    const btnApply= document.getElementById('applyTeams'); if(btnApply) btnApply.onclick = applyTeams;
-    const btnCancel= document.getElementById('cancelTeams'); if(btnCancel) btnCancel.onclick = ()=> closeTeamsPicker();
-    // إدارة الصلاحيات (قفل الإعدادات على إيميل معيّن)
-    const adminInfo = document.getElementById('adminInfo');
-    const lockBtn = document.getElementById('lockAdmin');
-    const unlockBtn = document.getElementById('unlockAdmin');
-    const getAdmin = ()=> localStorage.getItem('ADMIN_EMAIL')||'';
-    function enforceAdminUI(user){
-      const admin = getAdmin();
-      const email = user?.email || '';
-      const isLocked = !!admin;
-      const amIAdmin = isLocked ? (email && email.toLowerCase()===admin.toLowerCase()) : true;
-      // تعطيل عناصر الإعدادات لغير الأدمن
-      ['competitionIds','teamIds','saveScope','saveToken'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !amIAdmin; });
-      adminInfo.textContent = isLocked ? `الإعدادات مقفولة على: ${admin}` : 'الإعدادات مفتوحة للجميع';
-      lockBtn.classList.toggle('hidden', isLocked);
-      unlockBtn.classList.toggle('hidden', !isLocked || !amIAdmin);
+    const comps = parseComps($('#competitionIds').value || localStorage.getItem('COMP_IDS'));
+    if(!comps || !comps.length){ $('#noMatches').classList.remove('hidden'); $('#noMatches').textContent='أدخل كود مسابقة أولاً (PL مثلاً)'; return; }
+    localStorage.setItem('COMP_IDS', comps.join(','));
+
+    try{
+      let all = [];
+      for(const c of comps){
+        try{ all = all.concat(await fetchCompMatches(c)); }
+        catch(e){ show(e.message); }
+      }
+      const teamFilter = ($('#teamIds').value||localStorage.getItem('TEAM_IDS')||'').split(',').map(x=>x.trim()).filter(Boolean);
+      if(teamFilter.length){ all = all.filter(m=> teamFilter.includes(String(m.homeTeam.id)) || teamFilter.includes(String(m.awayTeam.id)) ); }
+      all = all.filter(m=> ['TIMED','SCHEDULED'].includes(m.status));
+      if(!all.length){ $('#noMatches').classList.remove('hidden'); return; }
+      all.sort((a,b)=> new Date(a.utcDate)-new Date(b.utcDate));
+      all.forEach(renderMatchCard);
+    }catch(e){ show('خطأ عام: '+e.message); }
+  }
+
+  async function listTeams(){
+    const comps = parseComps($('#competitionIds').value || localStorage.getItem('COMP_IDS'));
+    if(!comps || !comps.length) return alert('أدخل كود مسابقة أولاً');
+    $('#teamsList').textContent = 'جارِ الجلب...';
+    let txt='';
+    for(const c of comps){
+      try{
+        const t = await fetchCompTeams(c);
+        if(!t.length){ txt += `${c}: لا يوجد/تعذر الجلب\n`; continue; }
+        txt += `${c}:\n` + t.map(x=>`  ${x.id} — ${x.name}${x.tla? ' ('+x.tla+')':''}`).join('\n') + '\n';
+      }catch(e){ txt += `${c}: ${e.message}\n`; }
     }
-    lockBtn.onclick = async ()=>{
-      const { data: { user } } = await supabase.auth.getUser();
-      if(!user) return alert('سجّل دخول بالأول');
-      localStorage.setItem('ADMIN_EMAIL', user.email);
-      enforceAdminUI(user);
-      alert('تم قفل الإعدادات على إيميلك');
-    };
-    unlockBtn.onclick = async ()=>{
-      const { data: { user } } = await supabase.auth.getUser();
-      const admin = getAdmin();
-      if(!user || user.email.toLowerCase()!==admin.toLowerCase()) return alert('فقط الأدمن يقدر يلغي القفل');
-      localStorage.removeItem('ADMIN_EMAIL');
-      enforceAdminUI(user);
-      alert('تم إلغاء القفل');
-    };
+    $('#teamsList').textContent = txt || 'لا يوجد بيانات.';
+  }
 
-    // طبّق حالة الأدمن على الواجهة
-    { const { data: { user } } = await supabase.auth.getUser(); enforceAdminUI(user); }
+  // Attach listeners AFTER DOM is ready
+  function init(){
+    // Global error box
+    window.addEventListener('error', (e)=> show('JS Error: '+ e.message));
+    window.addEventListener('unhandledrejection', (e)=> show('Promise Error: '+ (e.reason?.message||e.reason)));
 
-    await loadMatches();
+    // Auth buttons
+    $('#btnLogin').addEventListener('click', ()=> $('#authCard').classList.toggle('hidden'));
+    $('#btnLogout').addEventListener('click', async ()=>{ await supabase.auth.signOut(); await refreshUser(); });
+    $('#doSignup').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signUp({email,password}); alert(error? error.message : 'تم إنشاء الحساب'); refreshUser(); });
+    $('#doSignin').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signInWithPassword({email,password}); alert(error? error.message : 'تم الدخول'); refreshUser(); });
+
+    // Settings buttons
+    $('#saveScope').addEventListener('click', ()=>{ localStorage.setItem('COMP_IDS', ($('#competitionIds').value||'').replace(/-/g,',')); localStorage.setItem('TEAM_IDS', $('#teamIds').value||''); loadMatches(); });
+    $('#saveToken').addEventListener('click', ()=>{ saveToken($('#footballToken').value); loadMatches(); });
+    $('#showTeamIds').addEventListener('click', listTeams);
+
+    // Prefill inputs
+    $('#competitionIds').value = (localStorage.getItem('COMP_IDS') || 'WC,CL,PD,PL').replace(/,/g,', ');
+    $('#teamIds').value        = (localStorage.getItem('TEAM_IDS') || '');
+    $('#footballToken').value  = getToken();
+
+    refreshUser();
+    loadMatches();
     renderLeaderboard();
-  })();
+  }
+  document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
-
