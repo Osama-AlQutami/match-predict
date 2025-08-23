@@ -34,7 +34,7 @@
     .pill{padding:3px 8px;border-radius:999px;border:1px solid var(--border)}
     .team{display:flex;align-items:center;gap:8px}
     .team img{width:22px;height:22px;object-fit:contain;background:#0b1220;border:1px solid var(--border);border-radius:6px}
-    .score input{width:52px;text-align:center;font-weight:700}
+    .score input{width:42px;text-align:center;font-weight:700}
     #debug{background:#111827;border:1px dashed #374151;border-radius:10px;padding:10px;margin-bottom:10px;white-space:pre-wrap}
     .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
     .table{width:100%;border-collapse:collapse}
@@ -99,7 +99,7 @@
 
     <!-- My upcoming saved predictions -->
     <section class="card" style="margin-top:12px">
-      <div class="section-head"><div class="title">سجلّي (محفوظ ولم يبدأ)</div></div>
+      <div class="section-head"><div class="title">سِجلي (محفوظ ولم يبدأ)</div></div>
       <div id="myUpcoming"></div>
     </section>
 
@@ -148,7 +148,9 @@
   const debugEl = $('#debug');
   function show(msg){ debugEl.textContent = msg; debugEl.classList.remove('hidden'); }
   function clearDebug(){ debugEl.classList.add('hidden'); debugEl.textContent = ''; }
-  const fmtTime = (iso)=> new Date(iso).toLocaleString('ar-JO');
+
+  // وقت بأرقام إنجليزية
+  const fmtTime = (iso)=> new Date(iso).toLocaleString('en-GB', { hour12:false });
 
   function lockReason(kickoffISO){
     const k = new Date(kickoffISO).getTime();
@@ -156,7 +158,7 @@
     if(diffMin <= 10) return `مغلق (باقي ${Math.max(0, Math.floor(diffMin))} دقيقة)`;
     return null;
   }
-  function crest(id,fallback){ return `https://crests.football-data.org/${id}.svg`; }
+  function crest(id){ return `https://crests.football-data.org/${id}.svg`; }
 
   function pointsFor(pred, result){
     if(!result || result.status !== 'FINISHED') return 0;
@@ -168,8 +170,9 @@
     return 0;
   }
 
-  let USER=null;              // user object
-  const userPreds = new Map(); // match_id -> prediction
+  let USER=null;                       // user object
+  const userPreds = new Map();         // match_id -> prediction
+  const matchesMap = new Map();        // match_id -> match (لأسماء الفرق والوقت)
 
   async function refreshUser(){
     const { data: { user } } = await supabase.auth.getUser();
@@ -189,11 +192,11 @@
     }
   }
 
-  // ===== جلب البيانات عبر Edge Function (4 أيام فقط) =====
+  // ===== جلب المباريات (٤ أيام فقط) =====
   async function fetchCompMatches(comp){
     const now  = new Date();
     const from = now.toISOString().slice(0,10);
-    const to   = new Date(now.getTime()+4*864e5).toISOString().slice(0,10); // 4 أيام
+    const to   = new Date(now.getTime()+4*864e5).toISOString().slice(0,10);
     const url  = `${EDGE_BASE}/competitions/${encodeURIComponent(comp)}/matches?dateFrom=${from}&dateTo=${to}`;
     const res  = await fetch(url, { headers: edgeHeaders });
     if(!res.ok){
@@ -204,6 +207,20 @@
     return (json.matches || []).filter(m => ['TIMED','SCHEDULED'].includes(m.status));
   }
 
+  // جلب مباريات لفترة معيّنة (لاستخدام التاريخ الأسبوعي)
+  async function fetchMatchesRange(fromISO, toISO){
+    let all = [];
+    for(const c of FIXED_COMP_CODES){
+      const url  = `${EDGE_BASE}/competitions/${encodeURIComponent(c)}/matches?dateFrom=${fromISO}&dateTo=${toISO}`;
+      const res  = await fetch(url, { headers: edgeHeaders });
+      if(res.ok){
+        const json = await res.json();
+        all = all.concat(json.matches||[]);
+      }
+    }
+    return all;
+  }
+
   function renderMatchCard(m){
     const lock = lockReason(m.utcDate);
     const card = document.createElement('div');
@@ -212,13 +229,15 @@
     const mid = String(m.id);
     const saved = userPreds.get(mid);
 
+    matchesMap.set(mid, m); // مهم لأسماء الفرق عند الحفظ/السِجل
+
     card.innerHTML = `
       <div class="row" style="justify-content:space-between">
         <div>
           <div class="row">
-            <div class="team"><img src="${crest(m.homeTeam.id,m.homeTeam.crest)}" alt=""><span>${m.homeTeam.name}</span></div>
+            <div class="team"><img src="${crest(m.homeTeam.id)}" alt=""><span>${m.homeTeam.name}</span></div>
             <span class="muted">vs</span>
-            <div class="team"><img src="${crest(m.awayTeam.id,m.awayTeam.crest)}" alt=""><span>${m.awayTeam.name}</span></div>
+            <div class="team"><img src="${crest(m.awayTeam.id)}" alt=""><span>${m.awayTeam.name}</span></div>
           </div>
           <div class="muted small">${m.competition.name} • ${kickoff}</div>
         </div>
@@ -251,28 +270,32 @@
     document.querySelectorAll('[id^="h_"]').forEach(inp=>{
       const mid = inp.id.slice(2);
       const a = document.getElementById(`a_${mid}`);
-      const lock = document.getElementById(`pill_${mid}`).textContent.startsWith('مغلق');
-      if(lock) return;
+      const pillTxt = document.getElementById(`pill_${mid}`).textContent;
+      const locked = pillTxt.startsWith('مغلق');
+      if(locked) return;
       if(userPreds.has(mid)) return; // لا تعديل بعد الحفظ
       const hV = parseInt(inp.value,10), aV = parseInt(a.value,10);
       if(Number.isNaN(hV)||Number.isNaN(aV)) return;
+      const m = matchesMap.get(mid);
       rows.push({
-        user_id: USER.id, match_id: mid, home_goals: hV, away_goals: aV,
-        kickoff: new Date().toISOString() // لن تظهر؛ موجودة لأغراض الجدول
+        user_id: USER.id,
+        match_id: mid,
+        home_goals: hV,
+        away_goals: aV,
+        kickoff: m ? new Date(m.utcDate).toISOString() : new Date().toISOString(),
+        comp_id: m?.competition?.code || null,
+        team_home: m?.homeTeam?.name || null,
+        team_away: m?.awayTeam?.name || null
       });
     });
     if(!rows.length) return alert('ما في توقعات جديدة للحفظ');
-    // ندخل بدون upsert حتى ما نسمح بالتعديل (unique constraint يمنع ازدواج)
     const { error } = await supabase.from('predictions').insert(rows);
     if(error){
-      // ممكن يرمي duplicate key لبعضها: نكمل ونعرض رسالة عامة
       alert('انحفظت التوقعات المتاحة (تجاهلنا اللي محفوظة سابقًا)');
     }else{
       alert('تم الحفظ ✌️');
     }
-    // حمّل التوقعات من جديد وعطّل الحقول
-    await loadUserPreds(); markSavedOnUI();
-    renderMyUpcoming();
+    await loadUserPreds(); markSavedOnUI(); renderMyUpcoming();
   }
 
   function markSavedOnUI(){
@@ -284,7 +307,7 @@
         const a = document.getElementById(`a_${mid}`);
         a.value = saved.away_goals;
         inp.disabled = true; a.disabled = true;
-        const pill = document.getElementById(`pill_${mid}`); if(pill) pill.textContent = 'محفوظ';
+        const pill = document.getElementById('pill_'+mid); if(pill) pill.textContent = 'محفوظ';
       }
     });
   }
@@ -316,12 +339,13 @@
   async function loadUserPreds(){
     if(!USER){ userPreds.clear(); return; }
     const {data} = await supabase.from('predictions')
-      .select('match_id,home_goals,away_goals,kickoff')
+      .select('match_id,home_goals,away_goals,kickoff,team_home,team_away')
       .eq('user_id', USER.id);
     userPreds.clear();
     (data||[]).forEach(p=> userPreds.set(String(p.match_id), p));
   }
 
+  // سِجلي (محفوظ ولم يبدأ)
   async function renderMyUpcoming(){
     if(!USER){ $('#myUpcoming').innerHTML = '<div class="muted">سجّل دخول لعرض سجلك.</div>'; return; }
     const now = new Date(); const in4 = new Date(now.getTime()+4*864e5);
@@ -334,12 +358,14 @@
       </table>`;
     const body = document.getElementById('myUpcomingBody');
     for(const p of mine){
+      const m = matchesMap.get(String(p.match_id));
+      const label = m ? `${m.homeTeam.name} vs ${m.awayTeam.name}` : `${p.team_home||''} vs ${p.team_away||''}`.trim();
       body.insertAdjacentHTML('beforeend',
-        `<tr><td>${p.match_id}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${fmtTime(p.kickoff)}</td></tr>`);
+        `<tr><td>${label}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${fmtTime(p.kickoff)}</td></tr>`);
     }
   }
 
-  // Weekly history (all users)
+  // Weekly history (all users) مع التوقع + النتيجة + النقاط
   function startOfWeek(d){
     const dt = new Date(d); const day = (dt.getDay()+6)%7; // Monday=0
     dt.setHours(0,0,0,0); dt.setDate(dt.getDate()-day); return dt;
@@ -350,21 +376,27 @@
     const cur = startOfWeek(now); const prev = new Date(cur); prev.setDate(cur.getDate()-7);
     const sel = document.getElementById('weekPick');
     sel.innerHTML = `
-      <option value="cur">الأسبوع الحالي (${cur.toLocaleDateString('ar-JO')})</option>
-      <option value="prev">الأسبوع السابق (${prev.toLocaleDateString('ar-JO')})</option>`;
+      <option value="cur">الأسبوع الحالي (${cur.toLocaleDateString('en-GB')})</option>
+      <option value="prev">الأسبوع السابق (${prev.toLocaleDateString('en-GB')})</option>`;
   }
   async function renderWeekly(){
     const pick = document.getElementById('weekPick').value;
     const base = pick==='prev'? startOfWeek(new Date(new Date().setDate(new Date().getDate()-7))) : startOfWeek(new Date());
-    const from = base.toISOString(); const to = endOfWeek(base).toISOString();
+    const from = base.toISOString().slice(0,10), to = endOfWeek(base).toISOString().slice(0,10);
 
+    // التوقعات ضمن الأسبوع
     const {data: preds} = await supabase.from('predictions')
-      .select('*').gte('kickoff', from).lt('kickoff', to);
+      .select('*').gte('kickoff', base.toISOString()).lt('kickoff', endOfWeek(base).toISOString());
 
+    // النتائج المخزنة
     const {data: res} = await supabase.from('results').select('*');
-    const rmap = new Map((res||[]).map(r=>[r.match_id,r]));
+    const rmap = new Map((res||[]).map(r=>[String(r.match_id),r]));
 
-    // group by user
+    // جلب مباريات الأسبوع لأسماء الفرق (تقليل نداءات)
+    const weekMatches = await fetchMatchesRange(from, to);
+    const wmap = new Map(weekMatches.map(m=>[String(m.id), m]));
+
+    // تجميع بالتسخ
     const byUser = new Map();
     for(const p of (preds||[])){
       const arr = byUser.get(p.user_id)||[]; arr.push(p); byUser.set(p.user_id, arr);
@@ -380,11 +412,31 @@
     for(const [uid,list] of byUser.entries()){
       let total=0;
       const rows = list.map(p=>{
-        const pts = pointsFor(p, rmap.get(p.match_id)); total+=pts;
-        return `<tr><td>${p.match_id}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${pts}</td></tr>`;
+        const mid = String(p.match_id);
+        const m = wmap.get(mid);
+        const label = m ? `${m.homeTeam.name} vs ${m.awayTeam.name}`
+                        : `${p.team_home||''} vs ${p.team_away||''}`.trim() || mid;
+
+        // النتيجة الحقيقية
+        const r = rmap.get(mid) || (m && m.status==='FINISHED' && m.score ? {
+          match_id: mid,
+          home_goals: m.score.fullTime.home,
+          away_goals: m.score.fullTime.away,
+          status: m.status
+        } : null);
+
+        const resText = r ? `${r.home_goals} – ${r.away_goals}` : '—';
+        const pts = pointsFor(p, r);
+        total += pts;
+        const cls = r ? (pts>0? 'ok':'bad') : '';
+        return `<tr><td>${label}</td><td>${p.home_goals} – ${p.away_goals}</td><td>${resText}</td><td class="${cls}">${r? pts : ''}</td></tr>`;
       }).join('');
+
       html += `<div class="title" style="margin-top:6px">${users[uid]} — <span class="muted small">المجموع: ${total}</span></div>
-        <table class="table" style="margin:6px 0 12px 0"><thead><tr><th>المباراة</th><th>التوقع</th><th>النقاط</th></tr></thead><tbody>${rows||''}</tbody></table>`;
+        <table class="table" style="margin:6px 0 12px 0">
+          <thead><tr><th>المباراة</th><th>التوقع</th><th>النتيجة</th><th>النقاط</th></tr></thead>
+          <tbody>${rows||''}</tbody>
+        </table>`;
     }
     $('#weekly').innerHTML = html || '<div class="muted">لا يوجد بيانات لهذا الأسبوع.</div>';
   }
@@ -392,7 +444,7 @@
   // ===== تهيئة الصفحة =====
   async function loadMatches(){
     clearDebug();
-    $('#matches').innerHTML = ''; $('#noMatches').classList.add('hidden');
+    $('#matches').innerHTML = ''; $('#noMatches').classList.add('hidden'); matchesMap.clear();
 
     let all = [];
     for(const c of FIXED_COMP_CODES){
@@ -418,7 +470,7 @@
     $('#doSignup').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signUp({email,password}); alert(error? error.message : 'تم إنشاء الحساب'); refreshUser(); });
     $('#doSignin').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signInWithPassword({email,password}); alert(error? error.message : 'تم الدخول'); refreshUser(); });
 
-    // Reset password flow (same site)
+    // Reset password (same site)
     const SITE_RESET_URL = location.origin + location.pathname.replace(/\/[^/]*$/, '/reset.html');
     $('#forgot').addEventListener('click', async ()=>{
       const email=$('#email').value.trim(); if(!email) return alert('اكتب الإيميل أولًا');
@@ -446,7 +498,7 @@
           }
         }catch(_){}
       }
-      renderLeaderboard();
+      renderLeaderboard(); renderWeekly();
     });
 
     fillWeekPicker();
