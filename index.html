@@ -59,24 +59,15 @@
       <div class="muted small" style="margin-top:8px">نستعمل Supabase مجانًا للمصادقة وتخزين النتائج.</div>
     </section>
 
-    <!-- Settings -->
+    <!-- Fixed Settings (read-only) -->
     <section class="card" style="margin-top:12px">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <div class="title">الإعدادات</div>
+        <div class="title">الإعدادات (مقفلة مسبقًا)</div>
         <div id="whoami" class="muted small">—</div>
       </div>
-      <div class="row" style="margin-top:8px">
-        <input id="competitionIds" placeholder="أمثلة: WC-CL-PD-PL أو PL فقط" style="min-width:260px"/>
-        <input id="teamIds" placeholder="IDs الفرق (اختياري، مفصولة بفواصل)" style="min-width:260px"/>
-        <button id="saveScope" class="btn">حفظ الفرق/المسابقات</button>
-      </div>
       <div class="muted small" style="margin-top:6px">
-        يتم جلب البيانات عبر Edge Function — لا داعي لإدخال Football-Data token هنا.
+        المسابقات: <strong>PD, CL, PL</strong> • عدد الفرق المختارة: <strong id="fixedTeamCount">—</strong>
       </div>
-      <div class="row" style="margin-top:8px">
-        <button id="showTeamIds" class="chip">عرض IDs الفرق للمسابقات</button>
-      </div>
-      <div id="teamsList" class="muted small" style="margin-top:8px;white-space:pre-wrap"></div>
     </section>
 
     <!-- Matches -->
@@ -109,13 +100,18 @@
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+  /**** ===== نطاق ثابت ===== ****/
+  const FIXED_COMP_CODES = ['PD','CL','PL'];
+  const FIXED_TEAM_IDS = [
+    81, 86, 4, 5, 524, 57, 58, 61, 62, 63, 64, 65, 66, 67, 71, 73, 76, 328, 341, 351, 354, 397, 402, 563, 1044
+  ];
+
   /**** ===== Helpers ===== ****/
   const $ = (sel)=>document.querySelector(sel);
   const debugEl = $('#debug');
   function show(msg){ debugEl.textContent = msg; debugEl.classList.remove('hidden'); }
   function clearDebug(){ debugEl.classList.add('hidden'); debugEl.textContent = ''; }
 
-  function parseComps(s){ return (s||'WC,CL,PD,PL').replace(/-/g,',').split(',').map(x=>x.trim()).filter(Boolean); }
   const fmtTime = (iso)=> new Date(iso).toLocaleString('ar-JO');
 
   function lockReason(kickoffISO){
@@ -166,17 +162,6 @@
     }
     const json = await res.json();
     return json.matches || [];
-  }
-
-  async function fetchCompTeams(comp){
-    const url = `${EDGE_BASE}/competitions/${encodeURIComponent(comp)}/teams`;
-    const res = await fetch(url, { headers: edgeHeaders });
-    if(!res.ok){
-      let msg = `API ${res.status}`;
-      try{ const j = await res.json(); if(j && (j.message||j.error)) msg += ` — ${j.message||j.error}`; }catch(_){}
-      throw new Error(`${msg} (teams: ${comp})`);
-    }
-    const j = await res.json(); return (j.teams||[]).map(t=>({id:t.id,name:t.name,tla:t.tla}));
   }
 
   function renderMatchCard(m){
@@ -235,58 +220,60 @@
     clearDebug();
     $('#matches').innerHTML = ''; $('#noMatches').classList.add('hidden');
 
-    const comps = parseComps($('#competitionIds').value || localStorage.getItem('COMP_IDS'));
-    if(!comps || !comps.length){ $('#noMatches').classList.remove('hidden'); $('#noMatches').textContent='أدخل كود مسابقة أولاً (PL مثلاً)'; return; }
-    localStorage.setItem('COMP_IDS', comps.join(','));
-
     try{
       let all = [];
-      for(const c of comps){
+      for(const c of FIXED_COMP_CODES){
         try{ all = all.concat(await fetchCompMatches(c)); }
         catch(e){ show(e.message); }
       }
-      const teamFilter = ($('#teamIds').value||localStorage.getItem('TEAM_IDS')||'').split(',').map(x=>x.trim()).filter(Boolean);
-      if(teamFilter.length){ all = all.filter(m=> teamFilter.includes(String(m.homeTeam.id)) || teamFilter.includes(String(m.awayTeam.id)) ); }
+      // فلترة حسب الفرق الثابتة
+      const wanted = new Set(FIXED_TEAM_IDS.map(String));
+      all = all.filter(m=> wanted.has(String(m.homeTeam.id)) || wanted.has(String(m.awayTeam.id)) );
+      // فقط مباريات قادمة
       all = all.filter(m=> ['TIMED','SCHEDULED'].includes(m.status));
+
       if(!all.length){ $('#noMatches').classList.remove('hidden'); return; }
       all.sort((a,b)=> new Date(a.utcDate)-new Date(b.utcDate));
       all.forEach(renderMatchCard);
     }catch(e){ show('خطأ عام: '+e.message); }
   }
 
-  async function listTeams(){
-    const comps = parseComps($('#competitionIds').value || localStorage.getItem('COMP_IDS'));
-    if(!comps || !comps.length) return alert('أدخل كود مسابقة أولاً');
-    $('#teamsList').textContent = 'جارِ الجلب...';
-    let txt='';
-    for(const c of comps){
-      try{
-        const t = await fetchCompTeams(c);
-        if(!t.length){ txt += `${c}: لا يوجد/تعذر الجلب\n`; continue; }
-        txt += `${c}:\n` + t.map(x=>`  ${x.id} — ${x.name}${x.tla? ' ('+x.tla+')':''}`).join('\n') + '\n';
-      }catch(e){ txt += `${c}: ${e.message}\n`; }
-    }
-    $('#teamsList').textContent = txt || 'لا يوجد بيانات.';
-  }
-
   // Attach listeners AFTER DOM is ready
   function init(){
+    // عدد الفرق في الملخص
+    const cnt = $('#fixedTeamCount'); if(cnt) cnt.textContent = String(FIXED_TEAM_IDS.length);
+
     window.addEventListener('error', (e)=> show('JS Error: '+ e.message));
     window.addEventListener('unhandledrejection', (e)=> show('Promise Error: '+ (e.reason?.message||e.reason)));
 
     // Auth
     $('#btnLogin').addEventListener('click', ()=> $('#authCard').classList.toggle('hidden'));
     $('#btnLogout').addEventListener('click', async ()=>{ await supabase.auth.signOut(); await refreshUser(); });
-    $('#doSignup').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signUp({email,password}); alert(error? error.message : 'تم إنشاء الحساب'); refreshUser(); });
-    $('#doSignin').addEventListener('click', async ()=>{ const email=$('#email').value, password=$('#password').value; const {error} = await supabase.auth.signInWithPassword({email,password}); alert(error? error.message : 'تم الدخول'); refreshUser(); });
 
-    // Settings
-    $('#saveScope').addEventListener('click', ()=>{ localStorage.setItem('COMP_IDS', ($('#competitionIds').value||'').replace(/-/g,',')); localStorage.setItem('TEAM_IDS', $('#teamIds').value||''); loadMatches(); });
-    $('#showTeamIds').addEventListener('click', listTeams);
-
-    // Prefill
-    $('#competitionIds').value = (localStorage.getItem('COMP_IDS') || 'WC,CL,PD,PL').replace(/,/g,', ');
-    $('#teamIds').value        = (localStorage.getItem('TEAM_IDS') || '');
+    $('#recalc').addEventListener('click', async ()=>{
+      // تحديث النتائج النهائية لآخر 7 أيام عبر Edge (نفس الفكرة لو حبيت)
+      const now = new Date();
+      const from = new Date(now.getTime()-7*864e5).toISOString().slice(0,10);
+      const to   = now.toISOString().slice(0,10);
+      for(const c of FIXED_COMP_CODES){
+        try{
+          const url = `${EDGE_BASE}/competitions/${encodeURIComponent(c)}/matches?dateFrom=${from}&dateTo=${to}`;
+          const res = await fetch(url, { headers: edgeHeaders });
+          if(!res.ok) continue;
+          const json = await res.json();
+          const finished = (json.matches||[]).filter(x=> x.status==='FINISHED');
+          for(const m of finished){
+            await supabase.from('results').upsert({
+              match_id: String(m.id),
+              home_goals: m.score?.fullTime?.home,
+              away_goals: m.score?.fullTime?.away,
+              status: m.status
+            });
+          }
+        }catch(_){}
+      }
+      renderLeaderboard();
+    });
 
     refreshUser();
     loadMatches();
