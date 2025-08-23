@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الشرح الكامل — Osama – Mohammad Predictions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1220;--bg2:#0f172a;--card:#0e1627;--muted:#a5b4c3;--text:#e8eef6;
+      --accent:#22d3ee;--accent2:#10b981;--danger:#ef4444;--border:#1e293b;--ring:rgba(34,211,238,.35)
+    }
+    [data-theme="light"]{
+      --bg:#f6f8fc;--bg2:#eef2f8;--card:#ffffff;--muted:#5b6574;--text:#0b1220;
+      --accent:#0ea5e9;--accent2:#059669;--danger:#dc2626;--border:#e5e7eb;--ring:rgba(14,165,233,.35)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg2) 35%);color:var(--text);font-family:"Tajawal",system-ui,Arial}
+    .container{max-width:900px;margin:0 auto;padding:20px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0}
+    .chip{border:1px solid var(--border);background:transparent;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
+    a{color:var(--accent)}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-top:12px}
+    h1{font-size:26px;margin:8px 0}
+    h2{font-size:20px;margin:12px 0 6px}
+    h3{font-size:16px;margin:12px 0 6px;color:var(--muted)}
+    .muted{color:var(--muted)}
+    code{background:#0b1220;border:1px solid var(--border);border-radius:8px;padding:2px 6px}
+    ul{margin:6px 0 12px 0}
+    .toc a{display:block;padding:6px 10px;border:1px solid var(--border);border-radius:10px;margin:6px 0;text-decoration:none;color:var(--text)}
+    .toc a:hover{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+    .q{font-weight:700}
+    .kbd{font-family:ui-monospace,Menlo,monospace;background:transparent;border:1px dashed var(--border);padding:2px 6px;border-radius:6px}
+    .note{border-inline-start:4px solid var(--accent);padding:10px;border-radius:10px;background:rgba(255,255,255,.02)}
+    .warn{border-inline-start:4px solid var(--danger);}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div style="font-weight:800">Osama – Mohammad Predictions</div>
+        <div class="muted">صفحة الشرح الكامل</div>
+      </div>
+      <div>
+        <a class="chip" href="./">⬅︎ الرجوع للموقع</a>
+        <button id="toggleTheme" class="chip" title="تبديل الثيم">🌙</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <h1>مرحبًا! 👋</h1>
+      <p>هاي الصفحة بتشرح كل شيء في الموقع <strong>بالتفصيل الممل</strong> — من التسجيل، للتوقع، للحسابات، للتاريخ، ولحل المشاكل الشائعة.</p>
+    </div>
+
+    <div class="card toc">
+      <h2>الفهرس</h2>
+      <a href="#intro">1) ما هي اللعبة؟</a>
+      <a href="#account">2) الحساب وتسجيل الدخول/الخروج</a>
+      <a href="#predict">3) طريقة التوقع وحفظه</a>
+      <a href="#lock">4) وقت الإقفال (T-10m)</a>
+      <a href="#crowd">5) حِكمة المجموعة (H/D/A & Top‑3)</a>
+      <a href="#mine">6) تبويب “سِجلي”</a>
+      <a href="#history">7) تبويب “السجل” (الأسبوعي لمتسابق واحد)</a>
+      <a href="#leader">8) الترتيب وحساب النقاط</a>
+      <a href="#results">9) تحديث النتائج</a>
+      <a href="#scope">10) نطاق المسابقات والفرق</a>
+      <a href="#reset">11) نسيان كلمة السر</a>
+      <a href="#privacy">12) الخصوصية والصلاحيات</a>
+      <a href="#troubleshoot">13) مشاكل شائعة وحلول</a>
+      <a href="#tech">14) ملاحظات تقنية (للمهتم)</a>
+    </div>
+
+    <div id="intro" class="card">
+      <h2>1) ما هي اللعبة؟</h2>
+      <p>لعبة توقع نتائج المباريات لمجموعة الأصدقاء. تختار نتيجة لكل مباراة، وتحصل على نقاط:</p>
+      <ul>
+        <li><strong>3 نقاط</strong> إذا أصبت النتيجة <em>بالضبط</em>.</li>
+        <li><strong>1 نقطة</strong> إذا أصبت <em>الاتجاه</em> (فوز/تعادل/خسارة) بدون دقة كاملة.</li>
+        <li><strong>0 نقاط</strong> للباقي.</li>
+      </ul>
+      <p>الموقع يعرض فقط المباريات خلال <strong>الأيام الأربعة القادمة</strong> من مسابقات ثابتة.</p>
+    </div>
+
+    <div id="account" class="card">
+      <h2>2) الحساب وتسجيل الدخول/الخروج</h2>
+      <ul>
+        <li>من الصفحة الرئيسية اضغط <strong>تسجيل/دخول</strong> ثم أدخل الإيميل وكلمة السر.</li>
+        <li>لإنشاء حساب جديد: اضغط <strong>إنشاء حساب</strong>. قد يصلك إيميل تأكيد.</li>
+        <li>بعد الدخول، بيظهر إيميلك أعلى الصفحة. يتم حفظه كـ <code>username</code> في جدول <code>profiles</code> لعرضه في الترتيب.</li>
+        <li>للخروج، اضغط <strong>تسجيل خروج</strong>.</li>
+      </ul>
+    </div>
+
+    <div id="predict" class="card">
+      <h2>3) طريقة التوقع وحفظه</h2>
+      <ol>
+        <li>في تبويب <strong>الرئيسية</strong>، تحت “المباريات القادمة”، ستجد بطاقة لكل مباراة.</li>
+        <li>لكل فريق يوجد <em>حقل أرقام</em> خاص فيه. لما تركز على الحقل، يتم <strong>تمييز صف الفريق</strong> بصريًا.</li>
+        <li>تقدر تستخدم أزرار <strong>+</strong>/<strong>−</strong> لرفع/خفض النتيجة، أو أزرار “<strong>نتائج سريعة</strong>” (مثل 1‑0، 2‑1…)</li>
+        <li>بعد تعبئة عدة مباريات، اضغط <strong>حفظ كل التوقعات</strong> (زر واحد).</li>
+      </ol>
+      <p class="note warn"><strong>مهم:</strong> بعد حفظ توقع مباراة معيّنة، <u>لا يمكن تعديله</u>. وإذا بقي أقل من 10 دقائق على بداية المباراة سيتم قفلها تلقائيًا.</p>
+    </div>
+
+    <div id="lock" class="card">
+      <h2>4) وقت الإقفال (T‑10m)</h2>
+      <p>التوقع مسموح حتى <span class="kbd">T‑10m</span> قبل انطلاق المباراة. بعد ذلك ستظهر شارة <strong>“مغلق”</strong> ويُمنع التعديل. يوجد عدّاد يتحدث كل 30 ثانية يبيّن الوقت المتبقي.</p>
+    </div>
+
+    <div id="crowd" class="card">
+      <h2>5) حِكمة المجموعة</h2>
+      <ul>
+        <li><strong>H/D/A:</strong> نسبة توقعات الفوز لصاحب الأرض (H)، أو التعادل (D)، أو فوز الضيف (A) بين كل اللاعبين.</li>
+        <li><strong>Top‑3:</strong> أكثر ثلاث نتائج شيوعًا (مثال: 2‑1 (5)).</li>
+        <li>تعرض للمباراة ككل بدون كشف تفاصيل كل شخص (خصوصية).</li>
+      </ul>
+    </div>
+
+    <div id="mine" class="card">
+      <h2>6) تبويب “سِجلي”</h2>
+      <p>يعرض توقعاتك <em>المحفوظة</em> للمباريات التي لم تبدأ بعد خلال الأيام الأربعة القادمة، مع وقت كل مباراة (بتنسيق أرقام إنجليزية).</p>
+    </div>
+
+    <div id="history" class="card">
+      <h2>7) تبويب “السجل” (الأسبوعي لمتسابق واحد)</h2>
+      <ul>
+        <li>اختر المتسابق من القائمة، ثم الأسبوع (<strong>الحالي</strong> أو <strong>السابق</strong>).</li>
+        <li>فِلتر حسب <strong>المسابقة</strong> أو ابحث باسم فريق في خانة الفلترة.</li>
+        <li>الجدول يعرض: المباراة، توقعك، النتيجة الحقيقية (إن وُجدت)، والنقاط المكتسبة لكل مباراة.</li>
+      </ul>
+    </div>
+
+    <div id="leader" class="card">
+      <h2>8) الترتيب وحساب النقاط</h2>
+      <ul>
+        <li>يظهر جميع المشاركين (حتى لو نقاطهم 0).</li>
+        <li>كل سطر يعرض: <strong>إجمالي النقاط</strong>، وعدّادات مختصرة:
+          <ul>
+            <li><strong>E</strong>: عدد النتائج الدقيقة (Exact)</li>
+            <li><strong>C</strong>: نتائج صحيحة بالاتجاه فقط (Close)</li>
+            <li><strong>P</strong>: عدد التوقعات الكلي</li>
+            <li><strong>Streak</strong>: سلسلة مباريات متتالية بنقاط (&gt;0) بأحدث المباريات</li>
+          </ul>
+        </li>
+        <li>ترتيب التعادل: النقاط ثم الاسم الأبجدي.</li>
+      </ul>
+    </div>
+
+    <div id="results" class="card">
+      <h2>9) تحديث النتائج</h2>
+      <p>من تبويب <strong>الرئيسية</strong>، زر <strong>“تحديث النقاط اليدوي”</strong> يجلب نتائج آخر 7 أيام من مزود البيانات، ثم يحدث جدول <code>results</code> ويُعاد احتساب الترتيب والسجل.
+      لاحقًا يمكن تفعيل <em>تحديث تلقائي مجدول</em> عن طريق وظائف مجدولة (Cron) في Supabase.</p>
+    </div>
+
+    <div id="scope" class="card">
+      <h2>10) نطاق المسابقات والفرق</h2>
+      <p>الموقع يعرض فقط مباريات أربعة أيام قادمة من المسابقات الثابتة: <strong>PD, CL, PL</strong>، ومجموعة فرق محددة مسبقًا.
+      استخدام مزود البيانات يتم عبر <strong>Edge Function</strong> خاصة، لذلك لا تحتاج لإدخال أي توكن.</p>
+    </div>
+
+    <div id="reset" class="card">
+      <h2>11) نسيان كلمة السر</h2>
+      <ul>
+        <li>من بطاقة <strong>الحساب</strong> اضغط <strong>“نسيت كلمة السر؟”</strong>.</li>
+        <li>سيوصل إيميل برابط إلى صفحة <code>reset.html</code> في نفس الموقع لتعيين كلمة سر جديدة.</li>
+      </ul>
+    </div>
+
+    <div id="privacy" class="card">
+      <h2>12) الخصوصية والصلاحيات</h2>
+      <ul>
+        <li>يتم حفظ إيميلك كاسم العرض في <code>profiles</code>.</li>
+        <li>لإظهار الجميع في الترتيب، توجد سياسات RLS تسمح <strong>بالقراءة العامة</strong> لجدولي <code>profiles</code> و<code>predictions</code>.</li>
+        <li>التوقعات لا يمكن تعديلها بعد حفظها (سياسة تمنع UPDATE/DELETE).</li>
+      </ul>
+    </div>
+
+    <div id="troubleshoot" class="card">
+      <h2>13) مشاكل شائعة وحلول</h2>
+      <p class="q">لا أرى مباريات.</p>
+      <ul>
+        <li>قد لا توجد مباريات ضمن الأربعة أيام القادمة للفرق المختارة.</li>
+        <li>تحقق أن خدمة البيانات شغّالة: وظيفة <em>Edge</em> <code>bright-function</code> على Supabase.</li>
+      </ul>
+      <p class="q">“Failed to fetch”.</p>
+      <ul>
+        <li>عادةً بسبب CORS أو توقف مزود البيانات مؤقتًا. جرّب لاحقًا أو حدّث الصفحة.</li>
+      </ul>
+      <p class="q">لا أرى أسماء بقية المتسابقين في الترتيب.</p>
+      <ul>
+        <li>تأكد من سياسات RLS: السماح <strong>بالقراءة</strong> من <code>profiles</code> و<code>predictions</code>.</li>
+      </ul>
+      <p class="q">حفظت توقع بالخطأ.</p>
+      <ul>
+        <li>لا يمكن التعديل بعد الحفظ (قاعدة اللعبة). تقدر تبلغ الأدمن لحذف الإدخال يدويًا من قاعدة البيانات إن لزم.</li>
+      </ul>
+    </div>
+
+    <div id="tech" class="card">
+      <h2>14) ملاحظات تقنية</h2>
+      <ul>
+        <li>Frontend: صفحة واحدة <code>index.html</code>، تبويبات داخلية.</li>
+        <li>Auth/DB: Supabase (<code>profiles</code>, <code>predictions</code>, <code>results</code>).</li>
+        <li>Data Provider: عبر <strong>Edge Function</strong> <code>bright-function</code> التي تمرر نداءات إلى <code>api.football-data.org</code>.</li>
+        <li>نافذة المباريات: 4 أيام قادمة؛ القفل: <span class="kbd">T‑10m</span>.</li>
+        <li>الوقت يُعرض بتنسيق <code>en-GB</code> (أرقام إنجليزية).</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    (function themeInit(){
+      const key='MP_THEME', saved=localStorage.getItem(key);
+      if(saved) document.documentElement.setAttribute('data-theme', saved);
+      const btn=document.getElementById('toggleTheme');
+      if(btn){
+        const assign=()=>{ const cur=document.documentElement.getAttribute('data-theme')||'dark'; btn.textContent = cur==='light' ? '🌙' : '☀️'; };
+        btn.onclick=()=>{ const cur=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light'; document.documentElement.setAttribute('data-theme',cur); localStorage.setItem(key, cur); assign(); };
+        assign();
+      }
+    })();
+  </script>
+</body>
+</html>
