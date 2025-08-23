@@ -105,7 +105,7 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
   /**** ===== إعدادات Supabase ===== ****/
-  const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co";
+  const SUPABASE_URL  = "https://wbxofuuwabwqurvbgfae.supabase.co/functions/v1/bright-function";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieG9mdXV3YWJ3cXVydmJnZmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MTUxNzQsImV4cCI6MjA3MTE5MTE3NH0.a45JBtzQI8so9z3lZ__aypUIafmhxeUOCkmBmbtQOHg";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
@@ -153,8 +153,7 @@
   }
 
   async function fetchCompMatches(comp){
-    const token = getToken();
-    const headers = token? { 'X-Auth-Token': token } : {};
+const headers = {}; // ما عاد نحتاج التوكن من المتصفح
     const now = new Date();
     const from = now.toISOString().slice(0,10);
     const to   = new Date(now.getTime()+7*864e5).toISOString().slice(0,10);
